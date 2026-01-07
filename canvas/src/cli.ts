@@ -56,7 +56,22 @@ program
     const env = detectTerminal();
     console.log("Terminal Environment:");
     console.log(`  In tmux: ${env.inTmux}`);
+    console.log(`  In iTerm2: ${env.inITerm2}`);
+    console.log(`  In Apple Terminal: ${env.inAppleTerminal}`);
+    console.log(`  Terminal type: ${env.terminalType}`);
     console.log(`\nSummary: ${env.summary}`);
+
+    if (env.terminalType === "apple-terminal") {
+      console.log(
+        "\n📺 Apple Terminal detected - canvas will open in a new window.",
+      );
+      console.log(
+        "   The window will be positioned on the right side of your screen.",
+      );
+    } else if (env.terminalType === "none") {
+      console.log("\n⚠️  No supported terminal detected.");
+      console.log("   Supported: iTerm2, tmux, Apple Terminal");
+    }
   });
 
 program

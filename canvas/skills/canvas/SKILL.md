@@ -15,11 +15,11 @@ Canvas provides interactive terminal displays (TUIs) that Claude can spawn and c
 
 ## Available Canvas Types
 
-| Canvas | Purpose | Scenarios |
-|--------|---------|-----------|
-| `calendar` | Display calendars, pick meeting times | `display`, `meeting-picker` |
-| `document` | View/edit markdown documents | `display`, `edit`, `email-preview` |
-| `flight` | Flight comparison and seat selection | `booking` |
+| Canvas     | Purpose                               | Scenarios                          |
+| ---------- | ------------------------------------- | ---------------------------------- |
+| `calendar` | Display calendars, pick meeting times | `display`, `meeting-picker`        |
+| `document` | View/edit markdown documents          | `display`, `edit`, `email-preview` |
+| `flight`   | Flight comparison and seat selection  | `booking`                          |
 
 ## Quick Start
 
@@ -42,6 +42,7 @@ bun run src/cli.ts spawn [kind] --scenario [name] --config '[json]'
 ```
 
 **Parameters:**
+
 - `kind`: Canvas type (calendar, document, flight)
 - `--scenario`: Interaction mode (e.g., display, meeting-picker, edit)
 - `--config`: JSON configuration for the canvas
@@ -52,6 +53,7 @@ bun run src/cli.ts spawn [kind] --scenario [name] --config '[json]'
 Interactive canvases communicate via Unix domain sockets.
 
 **Canvas → Controller:**
+
 ```typescript
 { type: "ready", scenario }        // Canvas is ready
 { type: "selected", data }         // User made a selection
@@ -60,10 +62,17 @@ Interactive canvases communicate via Unix domain sockets.
 ```
 
 **Controller → Canvas:**
+
 ```typescript
-{ type: "update", config }  // Update canvas configuration
-{ type: "close" }           // Request canvas to close
-{ type: "ping" }            // Health check
+{
+  type: ("update", config);
+} // Update canvas configuration
+{
+  type: "close";
+} // Request canvas to close
+{
+  type: "ping";
+} // Health check
 ```
 
 ## High-Level API
@@ -86,14 +95,26 @@ if (result.success && result.data) {
 
 ## Requirements
 
-- **tmux**: Canvas spawning requires a tmux session
+- **iTerm2 or tmux**: Canvas spawning requires one of:
+  - iTerm2 (recommended for macOS) - just run Claude Code inside iTerm2
+  - tmux session - for cross-platform or remote use
 - **Terminal with mouse support**: For click-based interactions
 - **Bun**: Runtime for executing canvas commands
 
+## Terminal Detection
+
+Check your environment with:
+
+```bash
+bun run src/cli.ts env
+```
+
+The canvas auto-detects iTerm2 or tmux and uses the appropriate split method.
+
 ## Skills Reference
 
-| Skill | Purpose |
-|-------|---------|
+| Skill      | Purpose                                     |
+| ---------- | ------------------------------------------- |
 | `calendar` | Calendar display and meeting picker details |
-| `document` | Document rendering and text selection |
-| `flight` | Flight comparison and seat map details |
+| `document` | Document rendering and text selection       |
+| `flight`   | Flight comparison and seat map details      |
