@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Box, Text, useInput, useApp, useStdout } from "ink";
-import { useIPC } from "./calendar/hooks/use-ipc";
+import { useIPCServer } from "./calendar/hooks/use-ipc-server";
 import {
   type FlightConfig,
   type FlightResult,
@@ -62,10 +62,10 @@ export function FlightCanvas({
   const [spinnerFrame, setSpinnerFrame] = useState(0);
   const spinnerChars = ["|", "/", "-", "\\"];
 
-  // IPC connection
-  const ipc = useIPC({
+  // IPC connection (server mode for CLI compatibility)
+  const ipc = useIPCServer({
     socketPath,
-    scenario,
+    scenario: scenario || "booking",
     onClose: () => exit(),
     onUpdate: (newConfig) => {
       setConfig(newConfig as FlightConfig);
@@ -133,7 +133,7 @@ export function FlightCanvas({
       if (seatmap.occupied.includes(seat)) return false;
       return true;
     },
-    [seatmap]
+    [seatmap],
   );
 
   // Handle final selection
@@ -154,7 +154,7 @@ export function FlightCanvas({
         setCountdown(3);
       }
     },
-    [selectedFlight, selectedSeat, ipc]
+    [selectedFlight, selectedSeat, ipc],
   );
 
   // Keyboard controls
@@ -231,7 +231,9 @@ export function FlightCanvas({
       } else if (key.upArrow) {
         setSeatCursorCol((c) => Math.max(0, c - 1)); // Move toward window (A)
       } else if (key.downArrow) {
-        setSeatCursorCol((c) => Math.min(seatmap.seatsPerRow.length - 1, c + 1)); // Move toward other window (F)
+        setSeatCursorCol((c) =>
+          Math.min(seatmap.seatsPerRow.length - 1, c + 1),
+        ); // Move toward other window (F)
       }
     }
   });
@@ -249,15 +251,13 @@ export function FlightCanvas({
   const rightPanelWidth = termWidth - leftPanelWidth - 4;
 
   // Seatmap height (bottom section) - needs space for 6 seat rows + aisle + header + legend
-  const seatmapHeight = seatmap ? Math.min(14, Math.max(12, Math.floor(contentHeight * 0.45))) : 0;
+  const seatmapHeight = seatmap
+    ? Math.min(14, Math.max(12, Math.floor(contentHeight * 0.45)))
+    : 0;
   const detailHeight = contentHeight - seatmapHeight;
 
   return (
-    <Box
-      flexDirection="column"
-      width={termWidth}
-      height={termHeight}
-    >
+    <Box flexDirection="column" width={termWidth} height={termHeight}>
       {/* Cyberpunk Header */}
       <CyberpunkHeader
         title={config?.title || "// FLIGHT_BOOKING_TERMINAL //"}
@@ -271,7 +271,9 @@ export function FlightCanvas({
           flexDirection="column"
           width={leftPanelWidth}
           borderStyle="single"
-          borderColor={focusMode === "flights" ? CYBER_COLORS.neonCyan : CYBER_COLORS.dim}
+          borderColor={
+            focusMode === "flights" ? CYBER_COLORS.neonCyan : CYBER_COLORS.dim
+          }
           paddingX={1}
         >
           <Box marginBottom={1}>
@@ -333,7 +335,11 @@ export function FlightCanvas({
             <Box
               flexDirection="column"
               borderStyle="single"
-              borderColor={focusMode === "seatmap" ? CYBER_COLORS.neonCyan : CYBER_COLORS.dim}
+              borderColor={
+                focusMode === "seatmap"
+                  ? CYBER_COLORS.neonCyan
+                  : CYBER_COLORS.dim
+              }
               paddingX={1}
               height={seatmapHeight}
             >
@@ -342,7 +348,10 @@ export function FlightCanvas({
                   {"[ SEATMAP ]"}
                 </Text>
                 {selectedSeat && (
-                  <Text color={CYBER_COLORS.neonGreen}> Seat: {selectedSeat}</Text>
+                  <Text color={CYBER_COLORS.neonGreen}>
+                    {" "}
+                    Seat: {selectedSeat}
+                  </Text>
                 )}
               </Box>
               <SeatmapPanel

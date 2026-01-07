@@ -107,6 +107,61 @@ program
     }
   });
 
+// Helper function to send a request to canvas and get response
+async function sendCanvasRequest(
+  socketPath: string,
+  requestType: string,
+  expectedResponseType: string,
+  timeoutMs: number = 2000,
+): Promise<string> {
+  let resolved = false;
+
+  return new Promise<string>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        reject(new Error("Timeout waiting for response"));
+      }
+    }, timeoutMs);
+
+    Bun.connect({
+      unix: socketPath,
+      socket: {
+        data(socket, data) {
+          if (resolved) return;
+          clearTimeout(timeout);
+          resolved = true;
+          const response = JSON.parse(data.toString().trim());
+          if (response.type === expectedResponseType) {
+            resolve(JSON.stringify(response.data));
+          } else {
+            resolve(JSON.stringify(null));
+          }
+          socket.end();
+        },
+        open(socket) {
+          const msg = JSON.stringify({ type: requestType });
+          socket.write(msg + "\n");
+        },
+        close() {
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timeout);
+            resolve(JSON.stringify(null));
+          }
+        },
+        error(socket, error) {
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timeout);
+            reject(error);
+          }
+        },
+      },
+    });
+  });
+}
+
 program
   .command("selection <id>")
   .description("Get the current selection from a running document canvas")
@@ -115,51 +170,11 @@ program
     const socketPath = getSocketPath(id);
 
     try {
-      let resolved = false;
-      const result = await new Promise<string>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          if (!resolved) {
-            resolved = true;
-            reject(new Error("Timeout waiting for response"));
-          }
-        }, 2000);
-
-        Bun.connect({
-          unix: socketPath,
-          socket: {
-            data(socket, data) {
-              if (resolved) return;
-              clearTimeout(timeout);
-              resolved = true;
-              const response = JSON.parse(data.toString().trim());
-              if (response.type === "selection") {
-                resolve(JSON.stringify(response.data));
-              } else {
-                resolve(JSON.stringify(null));
-              }
-              socket.end();
-            },
-            open(socket) {
-              const msg = JSON.stringify({ type: "getSelection" });
-              socket.write(msg + "\n");
-            },
-            close() {
-              if (!resolved) {
-                resolved = true;
-                clearTimeout(timeout);
-                resolve(JSON.stringify(null));
-              }
-            },
-            error(socket, error) {
-              if (!resolved) {
-                resolved = true;
-                clearTimeout(timeout);
-                reject(error);
-              }
-            },
-          },
-        });
-      });
+      const result = await sendCanvasRequest(
+        socketPath,
+        "getSelection",
+        "selection",
+      );
       console.log(result);
     } catch (err) {
       console.error(`Failed to get selection from canvas '${id}':`, err);
@@ -175,51 +190,11 @@ program
     const socketPath = getSocketPath(id);
 
     try {
-      let resolved = false;
-      const result = await new Promise<string>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          if (!resolved) {
-            resolved = true;
-            reject(new Error("Timeout waiting for response"));
-          }
-        }, 2000);
-
-        Bun.connect({
-          unix: socketPath,
-          socket: {
-            data(socket, data) {
-              if (resolved) return;
-              clearTimeout(timeout);
-              resolved = true;
-              const response = JSON.parse(data.toString().trim());
-              if (response.type === "content") {
-                resolve(JSON.stringify(response.data));
-              } else {
-                resolve(JSON.stringify(null));
-              }
-              socket.end();
-            },
-            open(socket) {
-              const msg = JSON.stringify({ type: "getContent" });
-              socket.write(msg + "\n");
-            },
-            close() {
-              if (!resolved) {
-                resolved = true;
-                clearTimeout(timeout);
-                resolve(JSON.stringify(null));
-              }
-            },
-            error(socket, error) {
-              if (!resolved) {
-                resolved = true;
-                clearTimeout(timeout);
-                reject(error);
-              }
-            },
-          },
-        });
-      });
+      const result = await sendCanvasRequest(
+        socketPath,
+        "getContent",
+        "content",
+      );
       console.log(result);
     } catch (err) {
       console.error(`Failed to get content from canvas '${id}':`, err);

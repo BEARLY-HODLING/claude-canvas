@@ -1,6 +1,6 @@
 // Seatmap Panel Component - Interactive seat selection grid (horizontal plane layout)
 
-import React from "react";
+import React, { type JSX } from "react";
 import { Box, Text } from "ink";
 import { type Seatmap, CYBER_COLORS, buildSeat } from "../types";
 
@@ -44,14 +44,14 @@ export function SeatmapPanel({
     parts.push(
       <Text key="nose" color={CYBER_COLORS.neonMagenta}>
         {"◀ "}
-      </Text>
+      </Text>,
     );
 
     for (let row = startCol; row <= endCol; row++) {
       parts.push(
         <Text key={`row-${row}`} color={CYBER_COLORS.dim}>
           {String(row).padStart(2, " ")}{" "}
-        </Text>
+        </Text>,
       );
     }
 
@@ -61,14 +61,19 @@ export function SeatmapPanel({
   // Render a single seat letter row (shows all airplane rows for one seat letter)
   const renderSeatLetterRow = (letterIndex: number) => {
     const letter = seatmap.seatsPerRow[letterIndex];
-    const isWindowSeat = letterIndex === 0 || letterIndex === seatmap.seatsPerRow.length - 1;
+    if (!letter) return null;
+    const isWindowSeat =
+      letterIndex === 0 || letterIndex === seatmap.seatsPerRow.length - 1;
     const parts: JSX.Element[] = [];
 
     // Seat letter label with window indicator
     parts.push(
-      <Text key="letter" color={isWindowSeat ? CYBER_COLORS.neonYellow : CYBER_COLORS.dim}>
+      <Text
+        key="letter"
+        color={isWindowSeat ? CYBER_COLORS.neonYellow : CYBER_COLORS.dim}
+      >
         {letter}{" "}
-      </Text>
+      </Text>,
     );
 
     // Render each airplane row's seat for this letter
@@ -80,11 +85,12 @@ export function SeatmapPanel({
       const isOccupied = seatmap.occupied.includes(seat);
       const isUnavailable = seatmap.unavailable.includes(seat);
       const isPremium = seatmap.premium.includes(seat);
-      const isCursor = focused && cursorRow === row && cursorCol === letterIndex;
+      const isCursor =
+        focused && cursorRow === row && cursorCol === letterIndex;
 
       // Determine display
       let char = "-";
-      let color = CYBER_COLORS.neonCyan;
+      let color: string = CYBER_COLORS.neonCyan;
       let bgColor: string | undefined;
 
       if (isSelected) {
@@ -108,7 +114,7 @@ export function SeatmapPanel({
       parts.push(
         <Text key={seat} backgroundColor={bgColor} color={color}>
           [{char}]
-        </Text>
+        </Text>,
       );
     }
 
@@ -119,16 +125,16 @@ export function SeatmapPanel({
   const seatRows: JSX.Element[] = [];
   for (let i = 0; i < seatmap.seatsPerRow.length; i++) {
     const letter = seatmap.seatsPerRow[i];
-    seatRows.push(renderSeatLetterRow(i));
+    if (!letter) continue;
+    const row = renderSeatLetterRow(i);
+    if (row) seatRows.push(row);
 
     // Add aisle after this letter if specified
     if (seatmap.aisleAfter.includes(letter)) {
       seatRows.push(
         <Box key={`aisle-${letter}`}>
-          <Text color={CYBER_COLORS.dim}>
-            {"  "}
-          </Text>
-        </Box>
+          <Text color={CYBER_COLORS.dim}>{"  "}</Text>
+        </Box>,
       );
     }
   }

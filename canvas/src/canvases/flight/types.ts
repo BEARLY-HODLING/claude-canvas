@@ -1,63 +1,68 @@
 // Flight Booking Canvas - Type Definitions
 
 export interface Airport {
-  code: string;        // 3-letter code, e.g., "SFO"
-  name: string;        // Full name, e.g., "San Francisco International"
-  city: string;        // City name, e.g., "San Francisco"
-  timezone: string;    // Timezone abbreviation, e.g., "PST"
+  code: string; // 3-letter code, e.g., "SFO"
+  name: string; // Full name, e.g., "San Francisco International"
+  city: string; // City name, e.g., "San Francisco"
+  timezone: string; // Timezone abbreviation, e.g., "PST"
 }
 
 export interface Seatmap {
-  rows: number;                // Total rows, e.g., 30
-  seatsPerRow: string[];       // Seat letters, e.g., ["A", "B", "C", "D", "E", "F"]
-  aisleAfter: string[];        // Aisle positions, e.g., ["C"] means aisle after seat C
-  unavailable: string[];       // Blocked seats, e.g., ["1A", "1B"]
-  premium: string[];           // Premium seats (exit row, extra legroom)
-  occupied: string[];          // Already booked seats
+  rows: number; // Total rows, e.g., 30
+  seatsPerRow: string[]; // Seat letters, e.g., ["A", "B", "C", "D", "E", "F"]
+  aisleAfter: string[]; // Aisle positions, e.g., ["C"] means aisle after seat C
+  unavailable: string[]; // Blocked seats, e.g., ["1A", "1B"]
+  premium: string[]; // Premium seats (exit row, extra legroom)
+  occupied: string[]; // Already booked seats
 }
 
 export interface Flight {
   id: string;
-  airline: string;             // e.g., "United Airlines"
-  flightNumber: string;        // e.g., "UA 123"
+  airline: string; // e.g., "United Airlines"
+  flightNumber: string; // e.g., "UA 123"
   origin: Airport;
   destination: Airport;
-  departureTime: string;       // ISO datetime string
-  arrivalTime: string;         // ISO datetime string
-  duration: number;            // Duration in minutes
-  price: number;               // Price in cents
-  currency: string;            // e.g., "USD"
+  departureTime: string; // ISO datetime string
+  arrivalTime: string; // ISO datetime string
+  duration: number; // Duration in minutes
+  price: number; // Price in cents
+  currency: string; // e.g., "USD"
   cabinClass: "economy" | "premium" | "business" | "first";
-  aircraft?: string;           // e.g., "Boeing 737-800"
-  stops: number;               // 0 = nonstop
-  seatmap?: Seatmap;           // Optional seatmap for seat selection
+  aircraft?: string; // e.g., "Boeing 737-800"
+  stops: number; // 0 = nonstop
+  seatmap?: Seatmap; // Optional seatmap for seat selection
 }
 
 export interface FlightConfig {
   flights: Flight[];
-  title?: string;              // Optional title for the canvas
-  showSeatmap?: boolean;       // Enable seat selection mode
-  selectedFlightId?: string;   // Pre-select a flight by ID
+  title?: string; // Optional title for the canvas
+  showSeatmap?: boolean; // Enable seat selection mode
+  selectedFlightId?: string; // Pre-select a flight by ID
 }
 
 export interface FlightResult {
   selectedFlight: Flight;
-  selectedSeat?: string;       // e.g., "12A"
+  selectedSeat?: string; // e.g., "12A"
 }
 
 // Cyberpunk color palette
 export const CYBER_COLORS = {
-  neonCyan: "cyan",            // Primary accent, selected items
-  neonMagenta: "magenta",      // Secondary accent, headers
-  neonGreen: "green",          // Success, confirmed
-  neonYellow: "yellow",        // Premium seats
-  neonRed: "red",              // Occupied/unavailable
-  dim: "gray",                 // Inactive/muted text
-  bg: "black",                 // Background
+  neonCyan: "cyan", // Primary accent, selected items
+  neonMagenta: "magenta", // Secondary accent, headers
+  neonGreen: "green", // Success, confirmed
+  neonYellow: "yellow", // Premium seats
+  neonRed: "red", // Occupied/unavailable
+  dim: "gray", // Inactive/muted text
+  bg: "black", // Background
 } as const;
 
 // Seat status for rendering
-export type SeatStatus = "available" | "occupied" | "selected" | "premium" | "unavailable";
+export type SeatStatus =
+  | "available"
+  | "occupied"
+  | "selected"
+  | "premium"
+  | "unavailable";
 
 // Focus mode for keyboard navigation
 export type FocusMode = "flights" | "seatmap";
@@ -93,9 +98,11 @@ export function formatTime(isoString: string, timezone?: string): string {
 }
 
 // Helper to parse seat string into row and letter
-export function parseSeat(seat: string): { row: number; letter: string } | null {
+export function parseSeat(
+  seat: string,
+): { row: number; letter: string } | null {
   const match = seat.match(/^(\d+)([A-Z])$/);
-  if (!match) return null;
+  if (!match || !match[1] || !match[2]) return null;
   return { row: parseInt(match[1], 10), letter: match[2] };
 }
 

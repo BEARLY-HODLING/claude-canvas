@@ -1,6 +1,6 @@
 // Seat Row Component - Single row of seats
 
-import React from "react";
+import React, { type JSX } from "react";
 import { Box, Text } from "ink";
 import { type Seatmap, CYBER_COLORS, buildSeat } from "../types";
 
@@ -12,18 +12,25 @@ interface Props {
   focused: boolean;
 }
 
-export function SeatRow({ row, seatmap, selectedSeat, cursorCol, focused }: Props) {
+export function SeatRow({
+  row,
+  seatmap,
+  selectedSeat,
+  cursorCol,
+  focused,
+}: Props) {
   const parts: JSX.Element[] = [];
 
   // Row number
   parts.push(
     <Text key="rownum" color={CYBER_COLORS.dim}>
       {String(row).padStart(2, " ")}
-    </Text>
+    </Text>,
   );
 
   for (let col = 0; col < seatmap.seatsPerRow.length; col++) {
     const letter = seatmap.seatsPerRow[col];
+    if (!letter) continue;
     const seat = buildSeat(row, letter);
     const isAisle = seatmap.aisleAfter.includes(letter);
 
@@ -36,7 +43,7 @@ export function SeatRow({ row, seatmap, selectedSeat, cursorCol, focused }: Prop
 
     // Determine display
     let char = "-";
-    let color = CYBER_COLORS.neonCyan;
+    let color: string = CYBER_COLORS.neonCyan;
     let bgColor: string | undefined;
 
     if (isSelected) {
@@ -60,7 +67,7 @@ export function SeatRow({ row, seatmap, selectedSeat, cursorCol, focused }: Prop
     parts.push(
       <Text key={seat} backgroundColor={bgColor} color={color}>
         [{char}]
-      </Text>
+      </Text>,
     );
 
     // Add aisle space
@@ -68,7 +75,7 @@ export function SeatRow({ row, seatmap, selectedSeat, cursorCol, focused }: Prop
       parts.push(
         <Text key={`aisle-${seat}`} color={CYBER_COLORS.dim}>
           {"   "}
-        </Text>
+        </Text>,
       );
     }
   }

@@ -31,118 +31,128 @@ export async function spawnCanvasWithIPC<TConfig, TResult>(
   kind: string,
   scenario: string,
   config: TConfig,
-  options: SpawnOptions = {}
+  options: SpawnOptions = {},
 ): Promise<CanvasResult<TResult>> {
   const { timeout = 300000, onReady } = options;
   const id = `${kind}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const socketPath = getSocketPath(id);
 
-  return new Promise((resolve) => {
-    let resolved = false;
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let resolved = false;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let server: Awaited<ReturnType<typeof createIPCServer>> | null = null;
 
-    const cleanup = () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        timeoutId = null;
-      }
-      server.close();
-    };
+  const cleanup = () => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+    server?.close();
+  };
 
-    const server = createIPCServer({
-      socketPath,
-      onConnect() {
-        // Canvas connected, waiting for ready message
-      },
-      onMessage(msg: CanvasMessage) {
-        if (resolved) return;
+  return new Promise(async (resolve) => {
+    try {
+      server = await createIPCServer({
+        socketPath,
+        onClientConnect() {
+          // Canvas connected, waiting for ready message
+        },
+        onMessage(msg) {
+          // Cast to CanvasMessage since we know the canvas sends these types
+          const canvasMsg = msg as unknown as CanvasMessage;
+          if (resolved) return;
 
-        switch (msg.type) {
-          case "ready":
-            onReady?.();
-            break;
+          switch (canvasMsg.type) {
+            case "ready":
+              onReady?.();
+              break;
 
-          case "selected":
-            resolved = true;
-            cleanup();
-            resolve({
-              success: true,
-              data: msg.data as TResult,
-            });
-            break;
+            case "selected":
+              resolved = true;
+              cleanup();
+              resolve({
+                success: true,
+                data: canvasMsg.data as TResult,
+              });
+              break;
 
-          case "cancelled":
-            resolved = true;
-            cleanup();
-            resolve({
-              success: true,
-              cancelled: true,
-            });
-            break;
+            case "cancelled":
+              resolved = true;
+              cleanup();
+              resolve({
+                success: true,
+                cancelled: true,
+              });
+              break;
 
-          case "error":
+            case "error":
+              resolved = true;
+              cleanup();
+              resolve({
+                success: false,
+                error: canvasMsg.message,
+              });
+              break;
+
+            case "pong":
+              // Response to ping, ignore
+              break;
+          }
+        },
+        onClientDisconnect() {
+          if (!resolved) {
             resolved = true;
             cleanup();
             resolve({
               success: false,
-              error: msg.message,
+              error: "Canvas disconnected unexpectedly",
             });
-            break;
+          }
+        },
+        onError(error) {
+          if (!resolved) {
+            resolved = true;
+            cleanup();
+            resolve({
+              success: false,
+              error: error.message,
+            });
+          }
+        },
+      });
 
-          case "pong":
-            // Response to ping, ignore
-            break;
+      // Set timeout
+      timeoutId = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          server?.broadcast({ type: "cancelled", reason: "Timeout" });
+          cleanup();
+          resolve({
+            success: false,
+            error: "Timeout waiting for user selection",
+          });
         }
-      },
-      onDisconnect() {
+      }, timeout);
+
+      // Spawn the canvas
+      spawnCanvas(kind, id, JSON.stringify(config), {
+        socketPath,
+        scenario,
+      }).catch((err) => {
         if (!resolved) {
           resolved = true;
           cleanup();
           resolve({
             success: false,
-            error: "Canvas disconnected unexpectedly",
+            error: `Failed to spawn canvas: ${err.message}`,
           });
         }
-      },
-      onError(error) {
-        if (!resolved) {
-          resolved = true;
-          cleanup();
-          resolve({
-            success: false,
-            error: error.message,
-          });
-        }
-      },
-    });
-
-    // Set timeout
-    timeoutId = setTimeout(() => {
-      if (!resolved) {
-        resolved = true;
-        server.send({ type: "close" });
-        cleanup();
-        resolve({
-          success: false,
-          error: "Timeout waiting for user selection",
-        });
-      }
-    }, timeout);
-
-    // Spawn the canvas
-    spawnCanvas(kind, id, JSON.stringify(config), {
-      socketPath,
-      scenario,
-    }).catch((err) => {
-      if (!resolved) {
-        resolved = true;
-        cleanup();
-        resolve({
-          success: false,
-          error: `Failed to spawn canvas: ${err.message}`,
-        });
-      }
-    });
+      });
+    } catch (err) {
+      resolve({
+        success: false,
+        error: `Failed to create IPC server: ${(err as Error).message}`,
+      });
+    }
   });
 }
 
@@ -152,13 +162,13 @@ export async function spawnCanvasWithIPC<TConfig, TResult>(
  */
 export async function pickMeetingTime(
   config: MeetingPickerConfig,
-  options?: SpawnOptions
+  options?: SpawnOptions,
 ): Promise<CanvasResult<MeetingPickerResult>> {
   return spawnCanvasWithIPC<MeetingPickerConfig, MeetingPickerResult>(
     "calendar",
     "meeting-picker",
     config,
-    options
+    options,
   );
 }
 
@@ -178,7 +188,7 @@ export async function displayCalendar(
       allDay?: boolean;
     }>;
   },
-  options?: SpawnOptions
+  options?: SpawnOptions,
 ): Promise<CanvasResult<void>> {
   return spawnCanvasWithIPC("calendar", "display", config, options);
 }
@@ -193,7 +203,7 @@ export async function displayCalendar(
  */
 export async function displayDocument(
   config: DocumentConfig,
-  options?: SpawnOptions
+  options?: SpawnOptions,
 ): Promise<CanvasResult<void>> {
   return spawnCanvasWithIPC("document", "display", config, options);
 }
@@ -205,13 +215,12 @@ export async function displayDocument(
  */
 export async function editDocument(
   config: DocumentConfig,
-  options?: SpawnOptions
+  options?: SpawnOptions,
 ): Promise<CanvasResult<DocumentSelection>> {
   return spawnCanvasWithIPC<DocumentConfig, DocumentSelection>(
     "document",
     "edit",
     config,
-    options
+    options,
   );
 }
-

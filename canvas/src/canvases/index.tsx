@@ -5,6 +5,7 @@ import { Document } from "./document";
 import type { DocumentConfig } from "./document/types";
 import { FlightCanvas } from "./flight";
 import type { FlightConfig } from "./flight/types";
+import { CanvasErrorBoundary } from "../components/error-boundary";
 
 // Clear screen and hide cursor
 function clearScreen() {
@@ -25,7 +26,7 @@ export async function renderCanvas(
   kind: string,
   id: string,
   config?: unknown,
-  options?: RenderOptions
+  options?: RenderOptions,
 ): Promise<void> {
   // Clear screen before rendering
   clearScreen();
@@ -39,23 +40,11 @@ export async function renderCanvas(
 
   switch (kind) {
     case "calendar":
-      return renderCalendar(
-        id,
-        config as CalendarConfig | undefined,
-        options
-      );
+      return renderCalendar(id, config as CalendarConfig | undefined, options);
     case "document":
-      return renderDocument(
-        id,
-        config as DocumentConfig | undefined,
-        options
-      );
+      return renderDocument(id, config as DocumentConfig | undefined, options);
     case "flight":
-      return renderFlight(
-        id,
-        config as FlightConfig | undefined,
-        options
-      );
+      return renderFlight(id, config as FlightConfig | undefined, options);
     default:
       console.error(`Unknown canvas kind: ${kind}`);
       process.exit(1);
@@ -65,18 +54,20 @@ export async function renderCanvas(
 async function renderCalendar(
   id: string,
   config?: CalendarConfig,
-  options?: RenderOptions
+  options?: RenderOptions,
 ): Promise<void> {
   const { waitUntilExit } = render(
-    <Calendar
-      id={id}
-      config={config}
-      socketPath={options?.socketPath}
-      scenario={options?.scenario || "display"}
-    />,
+    <CanvasErrorBoundary canvasKind="calendar">
+      <Calendar
+        id={id}
+        config={config}
+        socketPath={options?.socketPath}
+        scenario={options?.scenario || "display"}
+      />
+    </CanvasErrorBoundary>,
     {
       exitOnCtrlC: true,
-    }
+    },
   );
   await waitUntilExit();
 }
@@ -84,18 +75,20 @@ async function renderCalendar(
 async function renderDocument(
   id: string,
   config?: DocumentConfig,
-  options?: RenderOptions
+  options?: RenderOptions,
 ): Promise<void> {
   const { waitUntilExit } = render(
-    <Document
-      id={id}
-      config={config}
-      socketPath={options?.socketPath}
-      scenario={options?.scenario || "display"}
-    />,
+    <CanvasErrorBoundary canvasKind="document">
+      <Document
+        id={id}
+        config={config}
+        socketPath={options?.socketPath}
+        scenario={options?.scenario || "display"}
+      />
+    </CanvasErrorBoundary>,
     {
       exitOnCtrlC: true,
-    }
+    },
   );
   await waitUntilExit();
 }
@@ -103,18 +96,20 @@ async function renderDocument(
 async function renderFlight(
   id: string,
   config?: FlightConfig,
-  options?: RenderOptions
+  options?: RenderOptions,
 ): Promise<void> {
   const { waitUntilExit } = render(
-    <FlightCanvas
-      id={id}
-      config={config}
-      socketPath={options?.socketPath}
-      scenario={options?.scenario || "booking"}
-    />,
+    <CanvasErrorBoundary canvasKind="flight">
+      <FlightCanvas
+        id={id}
+        config={config}
+        socketPath={options?.socketPath}
+        scenario={options?.scenario || "booking"}
+      />
+    </CanvasErrorBoundary>,
     {
       exitOnCtrlC: true,
-    }
+    },
   );
   await waitUntilExit();
 }

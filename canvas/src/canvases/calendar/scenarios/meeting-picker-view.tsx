@@ -1,10 +1,14 @@
 // Meeting Picker View - Interactive calendar for selecting meeting times
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, type JSX } from "react";
 import { Box, Text, useInput, useApp, useStdout } from "ink";
 import { useMouse, type MouseEvent } from "../hooks/use-mouse";
 import { useIPC } from "../hooks/use-ipc";
-import type { MeetingPickerConfig, MeetingPickerResult, NamedCalendar } from "../../../scenarios/types";
+import type {
+  MeetingPickerConfig,
+  MeetingPickerResult,
+  NamedCalendar,
+} from "../../../scenarios/types";
 import {
   getWeekDays,
   formatDayName,
@@ -129,8 +133,9 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
   const availableHeight = Math.max(1, termHeight - headerHeight - footerHeight);
   const baseSlotHeight = Math.max(1, Math.floor(availableHeight / totalSlots));
   const extraRows = availableHeight - baseSlotHeight * totalSlots;
-  const slotHeights = Array.from({ length: totalSlots }, (_, i) =>
-    baseSlotHeight + (i < extraRows ? 1 : 0)
+  const slotHeights = Array.from(
+    { length: totalSlots },
+    (_, i) => baseSlotHeight + (i < extraRows ? 1 : 0),
   );
 
   // Calculate cumulative heights for grid positioning
@@ -152,6 +157,7 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
 
       for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
         const day = weekDays[dayIndex];
+        if (!day) continue;
         if (!isSameDay(eventStart, day) && !isSameDay(eventEnd, day)) continue;
 
         const dayStart = new Date(day);
@@ -166,7 +172,7 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
             startHour + Math.floor(slotMinutes / 60),
             slotMinutes % 60,
             0,
-            0
+            0,
           );
           const slotEnd = new Date(slotStart);
           slotEnd.setMinutes(slotEnd.getMinutes() + slotGranularity);
@@ -204,7 +210,8 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
       let slotIndex = 0;
       let cumHeight = 0;
       for (let i = 0; i < totalSlots; i++) {
-        cumHeight += slotHeights[i];
+        const height = slotHeights[i] ?? 1;
+        cumHeight += height;
         if (relY < cumHeight) {
           slotIndex = i;
           break;
@@ -217,20 +224,31 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
       if (slotIndex >= totalSlots) return null;
 
       const day = weekDays[dayIndex];
+      if (!day) return null;
+
       const slotMinutes = slotIndex * slotGranularity;
       const startTime = new Date(day);
       startTime.setHours(
         startHour + Math.floor(slotMinutes / 60),
         slotMinutes % 60,
         0,
-        0
+        0,
       );
       const endTime = new Date(startTime);
       endTime.setMinutes(endTime.getMinutes() + slotGranularity);
 
       return { dayIndex, slotIndex, day, startTime, endTime };
     },
-    [weekDays, columnWidth, slotHeights, totalSlots, slotGranularity, startHour, timeColumnWidth, headerHeight]
+    [
+      weekDays,
+      columnWidth,
+      slotHeights,
+      totalSlots,
+      slotGranularity,
+      startHour,
+      timeColumnWidth,
+      headerHeight,
+    ],
   );
 
   // Check if a slot is free (no one is busy)
@@ -239,7 +257,7 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
       const key = `${dayIndex}-${slotIndex}`;
       return !busyMap.has(key);
     },
-    [busyMap]
+    [busyMap],
   );
 
   // Handle mouse events
@@ -265,7 +283,7 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
         }
       }
     },
-    [terminalToSlot, isSlotFree, slotGranularity, ipc]
+    [terminalToSlot, isSlotFree, slotGranularity, ipc],
   );
 
   const handleMouseMove = useCallback(
@@ -279,7 +297,7 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
         setCursorSlot(slot.slotIndex);
       }
     },
-    [terminalToSlot]
+    [terminalToSlot],
   );
 
   useMouse({
@@ -294,18 +312,26 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
     if (cursorSlot < 0 || cursorSlot >= totalSlots) return null;
 
     const day = weekDays[cursorDay];
+    if (!day) return null;
+
     const slotMinutes = cursorSlot * slotGranularity;
     const startTime = new Date(day);
     startTime.setHours(
       startHour + Math.floor(slotMinutes / 60),
       slotMinutes % 60,
       0,
-      0
+      0,
     );
     const endTime = new Date(startTime);
     endTime.setMinutes(endTime.getMinutes() + slotGranularity);
 
-    return { dayIndex: cursorDay, slotIndex: cursorSlot, day, startTime, endTime };
+    return {
+      dayIndex: cursorDay,
+      slotIndex: cursorSlot,
+      day,
+      startTime,
+      endTime,
+    };
   }, [cursorDay, cursorSlot, weekDays, totalSlots, slotGranularity, startHour]);
 
   // Keyboard controls
@@ -323,7 +349,10 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
       // Select current cursor position and start countdown
       if (usingKeyboard) {
         const cursorInfo = getCursorSlotInfo();
-        if (cursorInfo && isSlotFree(cursorInfo.dayIndex, cursorInfo.slotIndex)) {
+        if (
+          cursorInfo &&
+          isSlotFree(cursorInfo.dayIndex, cursorInfo.slotIndex)
+        ) {
           const result: MeetingPickerResult = {
             startTime: cursorInfo.startTime.toISOString(),
             endTime: cursorInfo.endTime.toISOString(),
@@ -396,7 +425,7 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
   const renderTimeColumn = () => {
     const slots: JSX.Element[] = [];
     for (let slotIndex = 0; slotIndex < totalSlots; slotIndex++) {
-      const height = slotHeights[slotIndex];
+      const height = slotHeights[slotIndex] ?? 1;
       const slotMinutes = slotIndex * slotGranularity;
       const hour = startHour + Math.floor(slotMinutes / 60);
       const minute = slotMinutes % 60;
@@ -407,15 +436,17 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
         lines.push(
           <Text key={line} color="gray">
             {line === 0 && showLabel
-              ? `${formatHour(hour)}${getAmPm(hour)}`.padStart(timeColumnWidth - 1)
+              ? `${formatHour(hour)}${getAmPm(hour)}`.padStart(
+                  timeColumnWidth - 1,
+                )
               : " ".repeat(timeColumnWidth - 1)}
-          </Text>
+          </Text>,
         );
       }
       slots.push(
         <Box key={slotIndex} flexDirection="column" height={height}>
           {lines}
-        </Box>
+        </Box>,
       );
     }
     return slots;
@@ -424,17 +455,20 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
   // Render day column
   const renderDayColumn = (dayIndex: number) => {
     const day = weekDays[dayIndex];
+    if (!day) return null;
     const slots: JSX.Element[] = [];
 
     for (let slotIndex = 0; slotIndex < totalSlots; slotIndex++) {
-      const height = slotHeights[slotIndex];
+      const height = slotHeights[slotIndex] ?? 1;
       const key = `${dayIndex}-${slotIndex}`;
       const busyColors = busyMap.get(key) || [];
       const isBusy = busyColors.length > 0;
       const isHovered =
-        hoveredSlot?.dayIndex === dayIndex && hoveredSlot?.slotIndex === slotIndex;
+        hoveredSlot?.dayIndex === dayIndex &&
+        hoveredSlot?.slotIndex === slotIndex;
       const isSelected =
-        selectedSlot?.dayIndex === dayIndex && selectedSlot?.slotIndex === slotIndex;
+        selectedSlot?.dayIndex === dayIndex &&
+        selectedSlot?.slotIndex === slotIndex;
       const isCursor = cursorDay === dayIndex && cursorSlot === slotIndex;
       const isFree = !isBusy;
 
@@ -451,7 +485,9 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
             // Counting down
             const spin = spinnerChars[spinnerFrame];
             if (line === 0) {
-              content = (" " + spin + " " + countdown + "...").padEnd(columnWidth - 1);
+              content = (" " + spin + " " + countdown + "...").padEnd(
+                columnWidth - 1,
+              );
             } else if (line === 1 && height > 1) {
               content = " esc cancel".padEnd(columnWidth - 1);
             }
@@ -466,20 +502,27 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
           textColor = "white";
           if (line === 0) content = " return".padEnd(columnWidth - 1);
         } else if (isCursor && isBusy && usingKeyboard) {
-          bgColor = busyColors[0];
+          bgColor = busyColors[0] ?? "gray";
           textColor = "white";
           if (line === 0) content = " busy".padEnd(columnWidth - 1);
         } else if (isBusy) {
-          bgColor = busyColors[0];
+          bgColor = busyColors[0] ?? "gray";
           textColor = TEXT_COLORS[bgColor] || "white";
           if (line === 0) {
             const names = calendars
               .filter((c) => busyColors.includes(c.color))
               .map((c) => c.name)
               .join(", ");
-            content = (" " + names).slice(0, columnWidth - 1).padEnd(columnWidth - 1);
+            content = (" " + names)
+              .slice(0, columnWidth - 1)
+              .padEnd(columnWidth - 1);
           }
-        } else if (isHovered && isFree && !usingKeyboard && countdown === null) {
+        } else if (
+          isHovered &&
+          isFree &&
+          !usingKeyboard &&
+          countdown === null
+        ) {
           // Mouse hover - only show when not in countdown
           bgColor = "white";
           textColor = "black";
@@ -488,7 +531,10 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
           const slotMinutes = slotIndex * slotGranularity;
           const minute = slotMinutes % 60;
           if (line === 0) {
-            content = minute === 0 ? "─".repeat(columnWidth - 1) : "┄".repeat(columnWidth - 1);
+            content =
+              minute === 0
+                ? "─".repeat(columnWidth - 1)
+                : "┄".repeat(columnWidth - 1);
           }
         }
 
@@ -500,18 +546,22 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
             dimColor={!isBusy && !isHovered && !isSelected}
           >
             {content}
-          </Text>
+          </Text>,
         );
       }
 
       slots.push(
         <Box key={slotIndex} flexDirection="column" height={height}>
           {lines}
-        </Box>
+        </Box>,
       );
     }
 
-    return <Box key={dayIndex} flexDirection="column" width={columnWidth}>{slots}</Box>;
+    return (
+      <Box key={dayIndex} flexDirection="column" width={columnWidth}>
+        {slots}
+      </Box>
+    );
   };
 
   // Render legend
@@ -520,7 +570,10 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
       <Box>
         {calendars.map((calendar, i) => (
           <Box key={i} marginRight={2}>
-            <Text backgroundColor={calendar.color} color={TEXT_COLORS[calendar.color] || "white"}>
+            <Text
+              backgroundColor={calendar.color}
+              color={TEXT_COLORS[calendar.color] || "white"}
+            >
               {` ${calendar.name} `}
             </Text>
           </Box>
@@ -530,11 +583,16 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
   };
 
   return (
-    <Box flexDirection="column" width={termWidth} height={termHeight} paddingX={1}>
+    <Box
+      flexDirection="column"
+      width={termWidth}
+      height={termHeight}
+      paddingX={1}
+    >
       {/* Title bar */}
       <Box marginBottom={1}>
         <Text bold color="white">
-          {formatMonthYear(weekDays[0])} - Select a meeting time
+          {formatMonthYear(weekDays[0] ?? currentDate)} - Select a meeting time
         </Text>
       </Box>
 
@@ -551,7 +609,9 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
           return (
             <Box key={i} width={columnWidth} flexDirection="column">
               <Box justifyContent="center" width="100%">
-                <Text color={isToday ? "blue" : "gray"}>{formatDayName(day)}</Text>
+                <Text color={isToday ? "blue" : "gray"}>
+                  {formatDayName(day)}
+                </Text>
               </Box>
               <Box justifyContent="center" width="100%">
                 {isToday ? (
@@ -581,18 +641,30 @@ export function MeetingPickerView({ id, config, socketPath }: Props) {
           <Text color="gray">Esc to cancel</Text>
         ) : (
           <>
-            <Text color="gray">{"↑↓←→ move • Space/Enter select • n/p week • t today • q cancel"}</Text>
+            <Text color="gray">
+              {"↑↓←→ move • Space/Enter select • n/p week • t today • q cancel"}
+            </Text>
             {(() => {
               const cursorInfo = getCursorSlotInfo();
               if (cursorInfo) {
-                const free = isSlotFree(cursorInfo.dayIndex, cursorInfo.slotIndex);
+                const free = isSlotFree(
+                  cursorInfo.dayIndex,
+                  cursorInfo.slotIndex,
+                );
                 return (
                   <Text color={free ? "cyan" : "gray"}>
-                    {cursorInfo.startTime.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                    {cursorInfo.startTime.toLocaleTimeString([], {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
                     {" - "}
-                    {cursorInfo.endTime.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-                    {" "}
-                    {cursorInfo.day.toLocaleDateString([], { weekday: "short" })}
+                    {cursorInfo.endTime.toLocaleTimeString([], {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}{" "}
+                    {cursorInfo.day.toLocaleDateString([], {
+                      weekday: "short",
+                    })}
                     {free ? "" : " (busy)"}
                   </Text>
                 );

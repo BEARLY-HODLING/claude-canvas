@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, type JSX } from "react";
 import { Box, Text, useInput, useApp, useStdout } from "ink";
 import { MeetingPickerView } from "./calendar/scenarios/meeting-picker-view";
 import type { MeetingPickerConfig } from "../scenarios/types";
@@ -34,9 +34,13 @@ function isAllDayEvent(event: CalendarEvent): boolean {
   // Also detect all-day events by checking if they span midnight to midnight
   const start = event.startTime;
   const end = event.endTime;
-  return start.getHours() === 0 && start.getMinutes() === 0 &&
-         end.getHours() === 0 && end.getMinutes() === 0 &&
-         end.getTime() - start.getTime() >= 24 * 60 * 60 * 1000;
+  return (
+    start.getHours() === 0 &&
+    start.getMinutes() === 0 &&
+    end.getHours() === 0 &&
+    end.getMinutes() === 0 &&
+    end.getTime() - start.getTime() >= 24 * 60 * 60 * 1000
+  );
 }
 
 interface Props {
@@ -76,8 +80,8 @@ function getWeekDays(baseDate: Date): Date[] {
 }
 
 function formatDayName(date: Date): string {
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  return days[date.getDay()];
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+  return days[date.getDay()] ?? "???";
 }
 
 function formatDayNumber(date: Date): string {
@@ -86,10 +90,20 @@ function formatDayNumber(date: Date): string {
 
 function formatMonthYear(date: Date): string {
   const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
-  return `${months[date.getMonth()]} ${date.getFullYear()}`;
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ] as const;
+  return `${months[date.getMonth()] ?? "???"} ${date.getFullYear()}`;
 }
 
 function formatHour(hour: number): string {
@@ -119,43 +133,115 @@ function getDemoEvents(): CalendarEvent[] {
     {
       id: "1",
       title: "Team Standup",
-      startTime: new Date(monday.getFullYear(), monday.getMonth(), monday.getDate(), 9, 0),
-      endTime: new Date(monday.getFullYear(), monday.getMonth(), monday.getDate(), 9, 30),
+      startTime: new Date(
+        monday.getFullYear(),
+        monday.getMonth(),
+        monday.getDate(),
+        9,
+        0,
+      ),
+      endTime: new Date(
+        monday.getFullYear(),
+        monday.getMonth(),
+        monday.getDate(),
+        9,
+        30,
+      ),
       color: INK_COLORS[0],
     },
     {
       id: "2",
       title: "Design Review",
-      startTime: new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 1, 14, 0),
-      endTime: new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 1, 15, 30),
+      startTime: new Date(
+        monday.getFullYear(),
+        monday.getMonth(),
+        monday.getDate() + 1,
+        14,
+        0,
+      ),
+      endTime: new Date(
+        monday.getFullYear(),
+        monday.getMonth(),
+        monday.getDate() + 1,
+        15,
+        30,
+      ),
       color: INK_COLORS[1],
     },
     {
       id: "3",
       title: "Lunch with Sarah",
-      startTime: new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 2, 12, 0),
-      endTime: new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 2, 13, 0),
+      startTime: new Date(
+        monday.getFullYear(),
+        monday.getMonth(),
+        monday.getDate() + 2,
+        12,
+        0,
+      ),
+      endTime: new Date(
+        monday.getFullYear(),
+        monday.getMonth(),
+        monday.getDate() + 2,
+        13,
+        0,
+      ),
       color: INK_COLORS[2],
     },
     {
       id: "4",
       title: "Product Planning",
-      startTime: new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 3, 10, 0),
-      endTime: new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 3, 11, 30),
+      startTime: new Date(
+        monday.getFullYear(),
+        monday.getMonth(),
+        monday.getDate() + 3,
+        10,
+        0,
+      ),
+      endTime: new Date(
+        monday.getFullYear(),
+        monday.getMonth(),
+        monday.getDate() + 3,
+        11,
+        30,
+      ),
       color: INK_COLORS[3],
     },
     {
       id: "5",
       title: "1:1 with Manager",
-      startTime: new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 4, 15, 0),
-      endTime: new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 4, 16, 0),
+      startTime: new Date(
+        monday.getFullYear(),
+        monday.getMonth(),
+        monday.getDate() + 4,
+        15,
+        0,
+      ),
+      endTime: new Date(
+        monday.getFullYear(),
+        monday.getMonth(),
+        monday.getDate() + 4,
+        16,
+        0,
+      ),
       color: INK_COLORS[4],
     },
     {
       id: "6",
       title: "Sprint Retro",
-      startTime: new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 4, 11, 0),
-      endTime: new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 4, 12, 0),
+      startTime: new Date(
+        monday.getFullYear(),
+        monday.getMonth(),
+        monday.getDate() + 4,
+        11,
+        0,
+      ),
+      endTime: new Date(
+        monday.getFullYear(),
+        monday.getMonth(),
+        monday.getDate() + 4,
+        12,
+        0,
+      ),
       color: INK_COLORS[5],
     },
   ];
@@ -170,9 +256,18 @@ interface DayColumnProps {
   currentTime: Date;
 }
 
-function DayColumn({ date, events, isToday, columnWidth, slotHeights, currentTime }: DayColumnProps) {
+function DayColumn({
+  date,
+  events,
+  isToday,
+  columnWidth,
+  slotHeights,
+  currentTime,
+}: DayColumnProps) {
   // Filter to only timed events (not all-day) for this day
-  const dayEvents = events.filter((e) => isSameDay(e.startTime, date) && !isAllDayEvent(e));
+  const dayEvents = events.filter(
+    (e) => isSameDay(e.startTime, date) && !isAllDayEvent(e),
+  );
 
   // Calculate current time position for the "now" line (show on ALL days)
   const currentHour = currentTime.getHours();
@@ -192,19 +287,24 @@ function DayColumn({ date, events, isToday, columnWidth, slotHeights, currentTim
       const slotEndTime = slotTime + 0.5;
       const thisSlotHeight = slotHeights[slotIndex] || 1;
 
-      const slotEvent = dayEvents.find(e => {
-        const eventStartTime = e.startTime.getHours() + e.startTime.getMinutes() / 60;
+      const slotEvent = dayEvents.find((e) => {
+        const eventStartTime =
+          e.startTime.getHours() + e.startTime.getMinutes() / 60;
         const eventEndTime = e.endTime.getHours() + e.endTime.getMinutes() / 60;
         return slotTime >= eventStartTime && slotTime < eventEndTime;
       });
 
-      const isEventStart = slotEvent &&
+      const isEventStart =
+        slotEvent &&
         slotEvent.startTime.getHours() === hour &&
         Math.floor(slotEvent.startTime.getMinutes() / 30) === half;
       const eventTitle = slotEvent?.title.slice(0, columnWidth - 2) || "";
 
       // Check if the "now" line should appear in this slot
-      const nowInThisSlot = showNowLine && currentTimeDecimal >= slotTime && currentTimeDecimal < slotEndTime;
+      const nowInThisSlot =
+        showNowLine &&
+        currentTimeDecimal >= slotTime &&
+        currentTimeDecimal < slotEndTime;
       // Calculate which line within the slot the now line should appear on
       const nowLinePosition = nowInThisSlot
         ? Math.floor(((currentTimeDecimal - slotTime) / 0.5) * thisSlotHeight)
@@ -218,31 +318,48 @@ function DayColumn({ date, events, isToday, columnWidth, slotHeights, currentTim
         if (isNowLine && !slotEvent) {
           // Draw red "now" line
           lines.push(
-            <Text key={line} color="red">{"━".repeat(columnWidth - 1)}</Text>
+            <Text key={line} color="red">
+              {"━".repeat(columnWidth - 1)}
+            </Text>,
           );
         } else if (slotEvent) {
           // Use contrasting text color based on background
-          const textColor = isNowLine ? "red" : (TEXT_COLORS[slotEvent.color || "blue"] || "white");
+          const textColor = isNowLine
+            ? "red"
+            : TEXT_COLORS[slotEvent.color || "blue"] || "white";
           lines.push(
-            <Text key={line} backgroundColor={slotEvent.color} color={textColor} bold>
+            <Text
+              key={line}
+              backgroundColor={slotEvent.color}
+              color={textColor}
+              bold
+            >
               {line === 0 && isEventStart
                 ? ` ${eventTitle}`.padEnd(columnWidth - 1)
                 : " ".repeat(columnWidth - 1)}
-            </Text>
+            </Text>,
           );
         } else {
           lines.push(
             <Text key={line} color="gray" dimColor>
-              {line === 0 ? (half === 0 ? "─".repeat(columnWidth - 1) : "┄".repeat(columnWidth - 1)) : " ".repeat(columnWidth - 1)}
-            </Text>
+              {line === 0
+                ? half === 0
+                  ? "─".repeat(columnWidth - 1)
+                  : "┄".repeat(columnWidth - 1)
+                : " ".repeat(columnWidth - 1)}
+            </Text>,
           );
         }
       }
 
       slots.push(
-        <Box key={`${hour}-${half}`} flexDirection="column" height={thisSlotHeight}>
+        <Box
+          key={`${hour}-${half}`}
+          flexDirection="column"
+          height={thisSlotHeight}
+        >
           {lines}
-        </Box>
+        </Box>,
       );
       slotIndex++;
       cumulativeHeight += thisSlotHeight;
@@ -266,12 +383,17 @@ interface DayHeadersRowProps {
   timeColumnWidth: number;
 }
 
-function DayHeadersRow({ weekDays, today, columnWidth, timeColumnWidth }: DayHeadersRowProps) {
+function DayHeadersRow({
+  weekDays,
+  today,
+  columnWidth,
+  timeColumnWidth,
+}: DayHeadersRowProps) {
   return (
     <Box>
       {/* Empty space for time column */}
       <Box width={timeColumnWidth}>
-        <Text>{" "}</Text>
+        <Text> </Text>
       </Box>
       {/* Day headers */}
       {weekDays.map((day, i) => {
@@ -279,11 +401,17 @@ function DayHeadersRow({ weekDays, today, columnWidth, timeColumnWidth }: DayHea
         return (
           <Box key={i} width={columnWidth} flexDirection="column">
             <Box justifyContent="center" width="100%">
-              <Text color={isToday ? "blue" : "gray"}>{formatDayName(day)}</Text>
+              <Text color={isToday ? "blue" : "gray"}>
+                {formatDayName(day)}
+              </Text>
             </Box>
             <Box justifyContent="center" width="100%">
               {isToday ? (
-                <Text backgroundColor="blue" color="white" bold>{` ${formatDayNumber(day)} `}</Text>
+                <Text
+                  backgroundColor="blue"
+                  color="white"
+                  bold
+                >{` ${formatDayNumber(day)} `}</Text>
               ) : (
                 <Text bold>{formatDayNumber(day)}</Text>
               )}
@@ -302,7 +430,12 @@ interface AllDayRowProps {
   timeColumnWidth: number;
 }
 
-function AllDayEventsRow({ weekDays, events, columnWidth, timeColumnWidth }: AllDayRowProps) {
+function AllDayEventsRow({
+  weekDays,
+  events,
+  columnWidth,
+  timeColumnWidth,
+}: AllDayRowProps) {
   // Get all-day events for the week
   const allDayEvents = events.filter(isAllDayEvent);
 
@@ -314,11 +447,13 @@ function AllDayEventsRow({ weekDays, events, columnWidth, timeColumnWidth }: All
     <Box>
       {/* Empty space for time column */}
       <Box width={timeColumnWidth}>
-        <Text>{" "}</Text>
+        <Text> </Text>
       </Box>
       {/* All-day event cells for each day */}
       {weekDays.map((day, i) => {
-        const dayAllDay = allDayEvents.filter((e) => isSameDay(e.startTime, day));
+        const dayAllDay = allDayEvents.filter((e) =>
+          isSameDay(e.startTime, day),
+        );
         return (
           <Box key={i} width={columnWidth} flexDirection="column">
             {dayAllDay.length > 0 ? (
@@ -327,7 +462,11 @@ function AllDayEventsRow({ weekDays, events, columnWidth, timeColumnWidth }: All
                 const title = event.title.slice(0, columnWidth - 2);
                 return (
                   <Box key={event.id} height={1}>
-                    <Text backgroundColor={event.color || "blue"} color={textColor} bold>
+                    <Text
+                      backgroundColor={event.color || "blue"}
+                      color={textColor}
+                      bold
+                    >
                       {` ${title}`.padEnd(columnWidth - 1)}
                     </Text>
                   </Box>
@@ -335,7 +474,9 @@ function AllDayEventsRow({ weekDays, events, columnWidth, timeColumnWidth }: All
               })
             ) : (
               <Box height={1}>
-                <Text color="gray" dimColor>{" ".repeat(columnWidth - 1)}</Text>
+                <Text color="gray" dimColor>
+                  {" ".repeat(columnWidth - 1)}
+                </Text>
               </Box>
             )}
           </Box>
@@ -345,7 +486,12 @@ function AllDayEventsRow({ weekDays, events, columnWidth, timeColumnWidth }: All
   );
 }
 
-export function Calendar({ id, config, socketPath, scenario = "display" }: Props) {
+export function Calendar({
+  id,
+  config,
+  socketPath,
+  scenario = "display",
+}: Props) {
   // Route to meeting picker if that scenario is requested
   if (scenario === "meeting-picker" && config?.calendars) {
     const pickerConfig: MeetingPickerConfig = {
@@ -357,7 +503,13 @@ export function Calendar({ id, config, socketPath, scenario = "display" }: Props
       startHour: 6,
       endHour: 22,
     };
-    return <MeetingPickerView id={id} config={pickerConfig} socketPath={socketPath} />;
+    return (
+      <MeetingPickerView
+        id={id}
+        config={pickerConfig}
+        socketPath={socketPath}
+      />
+    );
   }
 
   // Default display scenario
@@ -407,10 +559,11 @@ export function Calendar({ id, config, socketPath, scenario = "display" }: Props
   const availableHeight = Math.max(1, termHeight - headerHeight - footerHeight);
   const totalSlots = (END_HOUR - START_HOUR) * 2; // 2 slots per hour
   const baseSlotHeight = Math.max(1, Math.floor(availableHeight / totalSlots));
-  const extraRows = availableHeight - (baseSlotHeight * totalSlots);
+  const extraRows = availableHeight - baseSlotHeight * totalSlots;
   // Create array of slot heights - first `extraRows` slots get +1 height
-  const slotHeights = Array.from({ length: totalSlots }, (_, i) =>
-    baseSlotHeight + (i < extraRows ? 1 : 0)
+  const slotHeights = Array.from(
+    { length: totalSlots },
+    (_, i) => baseSlotHeight + (i < extraRows ? 1 : 0),
   );
 
   const events: CalendarEvent[] = config?.events
@@ -459,7 +612,10 @@ export function Calendar({ id, config, socketPath, scenario = "display" }: Props
     const firstHalfHeight = slotHeights[timeSlotIndex] || 1;
 
     // Check if current time is in this slot
-    const nowInFirstHalf = showNowIndicator && currentTimeDecimal >= slotTime && currentTimeDecimal < slotEndTime;
+    const nowInFirstHalf =
+      showNowIndicator &&
+      currentTimeDecimal >= slotTime &&
+      currentTimeDecimal < slotEndTime;
     const nowLineInFirstHalf = nowInFirstHalf
       ? Math.floor(((currentTimeDecimal - slotTime) / 0.5) * firstHalfHeight)
       : -1;
@@ -469,26 +625,40 @@ export function Calendar({ id, config, socketPath, scenario = "display" }: Props
       const isNowLine = line === nowLineInFirstHalf;
       if (isNowLine) {
         // Show current time in red (12-hour format)
-        const hour12 = currentHour === 0 ? 12 : currentHour > 12 ? currentHour - 12 : currentHour;
+        const hour12 =
+          currentHour === 0
+            ? 12
+            : currentHour > 12
+              ? currentHour - 12
+              : currentHour;
         const ampm = currentHour < 12 ? "a" : "p";
         const timeStr = `${hour12}:${currentMinute.toString().padStart(2, "0")}${ampm}`;
         firstHalfLines.push(
           <Text key={line} color="red" bold>
             {timeStr.padStart(timeColumnWidth - 1)}
-          </Text>
+          </Text>,
         );
       } else {
         firstHalfLines.push(
           <Text key={line} color="gray">
-            {line === 0 ? `${formatHour(hour)}${getAmPm(hour)}`.padStart(timeColumnWidth - 1) : " ".repeat(timeColumnWidth - 1)}
-          </Text>
+            {line === 0
+              ? `${formatHour(hour)}${getAmPm(hour)}`.padStart(
+                  timeColumnWidth - 1,
+                )
+              : " ".repeat(timeColumnWidth - 1)}
+          </Text>,
         );
       }
     }
     timeSlots.push(
-      <Box key={`${hour}-0`} flexDirection="column" height={firstHalfHeight} width={timeColumnWidth}>
+      <Box
+        key={`${hour}-0`}
+        flexDirection="column"
+        height={firstHalfHeight}
+        width={timeColumnWidth}
+      >
         {firstHalfLines}
-      </Box>
+      </Box>,
     );
     timeSlotIndex++;
 
@@ -497,9 +667,14 @@ export function Calendar({ id, config, socketPath, scenario = "display" }: Props
     const secondSlotEndTime = hour + 1;
     const secondHalfHeight = slotHeights[timeSlotIndex] || 1;
 
-    const nowInSecondHalf = showNowIndicator && currentTimeDecimal >= secondSlotTime && currentTimeDecimal < secondSlotEndTime;
+    const nowInSecondHalf =
+      showNowIndicator &&
+      currentTimeDecimal >= secondSlotTime &&
+      currentTimeDecimal < secondSlotEndTime;
     const nowLineInSecondHalf = nowInSecondHalf
-      ? Math.floor(((currentTimeDecimal - secondSlotTime) / 0.5) * secondHalfHeight)
+      ? Math.floor(
+          ((currentTimeDecimal - secondSlotTime) / 0.5) * secondHalfHeight,
+        )
       : -1;
 
     const secondHalfLines: JSX.Element[] = [];
@@ -507,22 +682,32 @@ export function Calendar({ id, config, socketPath, scenario = "display" }: Props
       const isNowLine = line === nowLineInSecondHalf;
       if (isNowLine) {
         // Show current time in red (12-hour format)
-        const hour12 = currentHour === 0 ? 12 : currentHour > 12 ? currentHour - 12 : currentHour;
+        const hour12 =
+          currentHour === 0
+            ? 12
+            : currentHour > 12
+              ? currentHour - 12
+              : currentHour;
         const ampm = currentHour < 12 ? "a" : "p";
         const timeStr = `${hour12}:${currentMinute.toString().padStart(2, "0")}${ampm}`;
         secondHalfLines.push(
           <Text key={line} color="red" bold>
             {timeStr.padStart(timeColumnWidth - 1)}
-          </Text>
+          </Text>,
         );
       } else {
-        secondHalfLines.push(<Text key={line}>{" "}</Text>);
+        secondHalfLines.push(<Text key={line}> </Text>);
       }
     }
     timeSlots.push(
-      <Box key={`${hour}-1`} flexDirection="column" height={secondHalfHeight} width={timeColumnWidth}>
+      <Box
+        key={`${hour}-1`}
+        flexDirection="column"
+        height={secondHalfHeight}
+        width={timeColumnWidth}
+      >
         {secondHalfLines}
-      </Box>
+      </Box>,
     );
     timeSlotIndex++;
   }
@@ -531,10 +716,17 @@ export function Calendar({ id, config, socketPath, scenario = "display" }: Props
   const hasAllDayEvents = events.some(isAllDayEvent);
 
   return (
-    <Box flexDirection="column" width={termWidth} height={termHeight} paddingX={1}>
+    <Box
+      flexDirection="column"
+      width={termWidth}
+      height={termHeight}
+      paddingX={1}
+    >
       {/* Title bar */}
       <Box marginBottom={1}>
-        <Text bold color="white">{formatMonthYear(weekDays[0])}</Text>
+        <Text bold color="white">
+          {formatMonthYear(weekDays[0] ?? currentDate)}
+        </Text>
       </Box>
 
       {/* Day headers row */}

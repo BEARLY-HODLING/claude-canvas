@@ -49,8 +49,8 @@ export function getWeekDays(baseDate: Date): Date[] {
 }
 
 export function formatDayName(date: Date): string {
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  return days[date.getDay()];
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+  return days[date.getDay()] ?? "???";
 }
 
 export function formatDayNumber(date: Date): string {
@@ -59,10 +59,20 @@ export function formatDayNumber(date: Date): string {
 
 export function formatMonthYear(date: Date): string {
   const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
-  ];
-  return `${months[date.getMonth()]} ${date.getFullYear()}`;
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ] as const;
+  return `${months[date.getMonth()] ?? "???"} ${date.getFullYear()}`;
 }
 
 export function formatHour(hour: number): string {
@@ -99,7 +109,11 @@ export function timeToDecimal(date: Date): number {
   return date.getHours() + date.getMinutes() / 60;
 }
 
-export function slotToTime(day: Date, slotIndex: number, granularity: number): Date {
+export function slotToTime(
+  day: Date,
+  slotIndex: number,
+  granularity: number,
+): Date {
   const result = new Date(day);
   const totalMinutes = slotIndex * granularity;
   const hours = Math.floor(totalMinutes / 60);

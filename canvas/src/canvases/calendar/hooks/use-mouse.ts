@@ -47,6 +47,9 @@ function parseMouseEvent(data: string): MouseEvent | null {
   if (!match) return null;
 
   const [, btnStr, xStr, yStr, action] = match;
+  // All captured groups are guaranteed to exist if match succeeded
+  if (!btnStr || !xStr || !yStr || !action) return null;
+
   const btn = parseInt(btnStr, 10);
   const x = parseInt(xStr, 10);
   const y = parseInt(yStr, 10);
@@ -118,9 +121,10 @@ export function useMouse(options: UseMouseOptions = {}): MouseState {
               // Only update isPressed for non-motion events
               isPressed: event.isMotion ? prev.isPressed : event.pressed,
               // Only update lastClick for actual clicks (not motion)
-              lastClick: (!event.isMotion && event.pressed)
-                ? { x: event.x, y: event.y }
-                : prev.lastClick,
+              lastClick:
+                !event.isMotion && event.pressed
+                  ? { x: event.x, y: event.y }
+                  : prev.lastClick,
             };
             return newState;
           });
@@ -208,7 +212,7 @@ export function useGridMouse(options: UseGridMouseOptions): {
 
       return { col, row };
     },
-    [gridLeft, gridTop, cellWidth, cellHeight, cols, rows]
+    [gridLeft, gridTop, cellWidth, cellHeight, cols, rows],
   );
 
   const handleClick = useCallback(
@@ -219,7 +223,7 @@ export function useGridMouse(options: UseGridMouseOptions): {
         onClick?.(gridPos);
       }
     },
-    [terminalToGrid, onClick]
+    [terminalToGrid, onClick],
   );
 
   const handleMove = useCallback(
@@ -227,7 +231,7 @@ export function useGridMouse(options: UseGridMouseOptions): {
       const gridPos = terminalToGrid(event.x, event.y);
       setHoveredCell(gridPos);
     },
-    [terminalToGrid]
+    [terminalToGrid],
   );
 
   useMouse({

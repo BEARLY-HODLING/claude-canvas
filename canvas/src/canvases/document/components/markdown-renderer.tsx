@@ -12,15 +12,22 @@ import type {
 import { MARKDOWN_STYLES, DIFF_STYLES, SELECTION_STYLE } from "../types";
 
 // Block types for parsing
-type BlockType = "heading" | "paragraph" | "codeBlock" | "list" | "blockquote" | "hr" | "blank";
+type BlockType =
+  | "heading"
+  | "paragraph"
+  | "codeBlock"
+  | "list"
+  | "blockquote"
+  | "hr"
+  | "blank";
 
 interface Block {
   type: BlockType;
   source: string;
   sourceOffset: number;
-  level?: number;        // For headings (1-4) and lists (indent level)
-  ordered?: boolean;     // For lists
-  items?: string[];      // For lists
+  level?: number; // For headings (1-4) and lists (indent level)
+  ordered?: boolean; // For lists
+  items?: string[]; // For lists
 }
 
 // Parse markdown into blocks
@@ -32,6 +39,7 @@ function parseBlocks(content: string): Block[] {
 
   while (i < lines.length) {
     const line = lines[i];
+    if (line === undefined) break;
     const lineStart = offset;
 
     // Blank line
@@ -48,7 +56,7 @@ function parseBlocks(content: string): Block[] {
 
     // Heading
     const headingMatch = line.match(/^(#{1,4})\s+(.*)$/);
-    if (headingMatch) {
+    if (headingMatch && headingMatch[1]) {
       blocks.push({
         type: "heading",
         source: line,
@@ -77,14 +85,19 @@ function parseBlocks(content: string): Block[] {
       const codeLines = [line];
       let codeOffset = line.length + 1;
       i++;
-      while (i < lines.length && !lines[i].startsWith("```")) {
-        codeLines.push(lines[i]);
-        codeOffset += lines[i].length + 1;
+      while (i < lines.length) {
+        const codeLine = lines[i];
+        if (!codeLine || codeLine.startsWith("```")) break;
+        codeLines.push(codeLine);
+        codeOffset += codeLine.length + 1;
         i++;
       }
       if (i < lines.length) {
-        codeLines.push(lines[i]);
-        codeOffset += lines[i].length + 1;
+        const closingLine = lines[i];
+        if (closingLine) {
+          codeLines.push(closingLine);
+          codeOffset += closingLine.length + 1;
+        }
         i++;
       }
       blocks.push({
@@ -101,9 +114,17 @@ function parseBlocks(content: string): Block[] {
       const quoteLines = [line];
       let quoteOffset = line.length + 1;
       i++;
-      while (i < lines.length && (lines[i].startsWith(">") || (lines[i].trim() !== "" && !lines[i].match(/^(#{1,4}|[-*_]{3,}|```|-\s|\d+\.\s)/)))) {
-        quoteLines.push(lines[i]);
-        quoteOffset += lines[i].length + 1;
+      while (i < lines.length) {
+        const quoteLine = lines[i];
+        if (!quoteLine) break;
+        if (
+          !quoteLine.startsWith(">") &&
+          (quoteLine.trim() === "" ||
+            quoteLine.match(/^(#{1,4}|[-*_]{3,}|```|-\s|\d+\.\s)/))
+        )
+          break;
+        quoteLines.push(quoteLine);
+        quoteOffset += quoteLine.length + 1;
         i++;
       }
       blocks.push({
@@ -120,9 +141,12 @@ function parseBlocks(content: string): Block[] {
       const listLines = [line];
       let listOffset = line.length + 1;
       i++;
-      while (i < lines.length && (/^[-*+]\s/.test(lines[i]) || /^\s+/.test(lines[i]))) {
-        listLines.push(lines[i]);
-        listOffset += lines[i].length + 1;
+      while (i < lines.length) {
+        const listLine = lines[i];
+        if (!listLine) break;
+        if (!(/^[-*+]\s/.test(listLine) || /^\s+/.test(listLine))) break;
+        listLines.push(listLine);
+        listOffset += listLine.length + 1;
         i++;
       }
       blocks.push({
@@ -140,9 +164,12 @@ function parseBlocks(content: string): Block[] {
       const listLines = [line];
       let listOffset = line.length + 1;
       i++;
-      while (i < lines.length && (/^\d+\.\s/.test(lines[i]) || /^\s+/.test(lines[i]))) {
-        listLines.push(lines[i]);
-        listOffset += lines[i].length + 1;
+      while (i < lines.length) {
+        const listLine = lines[i];
+        if (!listLine) break;
+        if (!(/^\d+\.\s/.test(listLine) || /^\s+/.test(listLine))) break;
+        listLines.push(listLine);
+        listOffset += listLine.length + 1;
         i++;
       }
       blocks.push({
@@ -159,9 +186,16 @@ function parseBlocks(content: string): Block[] {
     const paraLines = [line];
     let paraOffset = line.length + 1;
     i++;
-    while (i < lines.length && lines[i].trim() !== "" && !lines[i].match(/^(#{1,4}\s|[-*_]{3,}|```|>|[-*+]\s|\d+\.\s)/)) {
-      paraLines.push(lines[i]);
-      paraOffset += lines[i].length + 1;
+    while (i < lines.length) {
+      const paraLine = lines[i];
+      if (!paraLine) break;
+      if (
+        paraLine.trim() === "" ||
+        paraLine.match(/^(#{1,4}\s|[-*_]{3,}|```|>|[-*+]\s|\d+\.\s)/)
+      )
+        break;
+      paraLines.push(paraLine);
+      paraOffset += paraLine.length + 1;
       i++;
     }
     blocks.push({
@@ -177,12 +211,17 @@ function parseBlocks(content: string): Block[] {
 
 // Parse inline markdown (bold, italic, code, links)
 // sourceOffset points to the displayed content, sourceLength matches displayed text length
-function parseInline(text: string, baseOffset: number, baseStyle: Partial<SegmentStyle> = {}): LineSegment[] {
+function parseInline(
+  text: string,
+  baseOffset: number,
+  baseStyle: Partial<SegmentStyle> = {},
+): LineSegment[] {
   const segments: LineSegment[] = [];
 
   // Combined regex for inline elements
   // Order matters: ** before *, links before plain text
-  const inlinePattern = /(\*\*(.+?)\*\*|\*(.+?)\*|`([^`]+)`|\[([^\]]+)\]\(([^)]+)\))/g;
+  const inlinePattern =
+    /(\*\*(.+?)\*\*|\*(.+?)\*|`([^`]+)`|\[([^\]]+)\]\(([^)]+)\))/g;
   let match;
   let lastEnd = 0;
 
@@ -293,24 +332,36 @@ function wordWrap(text: string, width: number): string[] {
 }
 
 // Word wrap segments - splits segment text at word boundaries while preserving source offsets
-function wordWrapSegments(segments: LineSegment[], width: number): RenderedLine[] {
+function wordWrapSegments(
+  segments: LineSegment[],
+  width: number,
+): RenderedLine[] {
   const lines: RenderedLine[] = [];
   let currentLineSegments: LineSegment[] = [];
   let currentLineWidth = 0;
   let lineNumber = 1;
 
   // First, flatten all segments into a single text to get proper word boundaries
-  const fullText = segments.map(s => s.text).join("");
+  const fullText = segments.map((s) => s.text).join("");
 
   if (fullText.length === 0) {
-    return [{
-      lineNumber: 1,
-      sourceOffset: segments[0]?.sourceOffset || 0,
-      sourceLength: 0,
-      segments: [{ text: "", sourceOffset: segments[0]?.sourceOffset || 0, sourceLength: 0, style: {} }],
-      indent: 0,
-      isBlank: true,
-    }];
+    return [
+      {
+        lineNumber: 1,
+        sourceOffset: segments[0]?.sourceOffset || 0,
+        sourceLength: 0,
+        segments: [
+          {
+            text: "",
+            sourceOffset: segments[0]?.sourceOffset || 0,
+            sourceLength: 0,
+            style: {},
+          },
+        ],
+        indent: 0,
+        isBlank: true,
+      },
+    ];
   }
 
   // Word wrap the full text
@@ -361,14 +412,20 @@ function wordWrapSegments(segments: LineSegment[], width: number): RenderedLine[
     }
 
     if (lineSegments.length > 0) {
-      lines.push({
-        lineNumber: lineNumber++,
-        sourceOffset: lineSegments[0].sourceOffset,
-        sourceLength: lineSegments.reduce((sum, s) => sum + s.sourceLength, 0),
-        segments: lineSegments,
-        indent: 0,
-        isBlank: false,
-      });
+      const firstSeg = lineSegments[0];
+      if (firstSeg) {
+        lines.push({
+          lineNumber: lineNumber++,
+          sourceOffset: firstSeg.sourceOffset,
+          sourceLength: lineSegments.reduce(
+            (sum, s) => sum + s.sourceLength,
+            0,
+          ),
+          segments: lineSegments,
+          indent: 0,
+          isBlank: false,
+        });
+      }
     }
   }
 
@@ -387,7 +444,14 @@ function renderBlocks(blocks: Block[], terminalWidth: number): RenderedLine[] {
           lineNumber: lineNumber++,
           sourceOffset: block.sourceOffset,
           sourceLength: block.source.length,
-          segments: [{ text: "", sourceOffset: block.sourceOffset, sourceLength: block.source.length, style: {} }],
+          segments: [
+            {
+              text: "",
+              sourceOffset: block.sourceOffset,
+              sourceLength: block.source.length,
+              style: {},
+            },
+          ],
           indent: 0,
           isBlank: true,
         });
@@ -395,13 +459,25 @@ function renderBlocks(blocks: Block[], terminalWidth: number): RenderedLine[] {
 
       case "heading": {
         const level = block.level || 1;
-        const prefix = level === 1 ? "# " : level === 2 ? "## " : level === 3 ? "### " : "#### ";
+        const prefix =
+          level === 1
+            ? "# "
+            : level === 2
+              ? "## "
+              : level === 3
+                ? "### "
+                : "#### ";
         const text = block.source.replace(/^#+\s+/, "");
         const style = MARKDOWN_STYLES[`h${level}`] || MARKDOWN_STYLES.h1;
 
         // Word wrap headings too
         const headingSegments: LineSegment[] = [
-          { text: prefix, sourceOffset: block.sourceOffset, sourceLength: prefix.length, style: { ...style, dimColor: true } },
+          {
+            text: prefix,
+            sourceOffset: block.sourceOffset,
+            sourceLength: prefix.length,
+            style: { ...style, dimColor: true },
+          },
           ...parseInline(text, block.sourceOffset + prefix.length, style),
         ];
         const wrappedHeading = wordWrapSegments(headingSegments, terminalWidth);
@@ -417,7 +493,14 @@ function renderBlocks(blocks: Block[], terminalWidth: number): RenderedLine[] {
           lineNumber: lineNumber++,
           sourceOffset: block.sourceOffset,
           sourceLength: block.source.length,
-          segments: [{ text: "─".repeat(Math.min(terminalWidth - 4, 60)), sourceOffset: block.sourceOffset, sourceLength: block.source.length, style: { color: "gray", dimColor: true } }],
+          segments: [
+            {
+              text: "─".repeat(Math.min(terminalWidth - 4, 60)),
+              sourceOffset: block.sourceOffset,
+              sourceLength: block.source.length,
+              style: { color: "gray", dimColor: true },
+            },
+          ],
           indent: 0,
           isBlank: false,
         });
@@ -437,7 +520,14 @@ function renderBlocks(blocks: Block[], terminalWidth: number): RenderedLine[] {
             lineNumber: lineNumber++,
             sourceOffset: offset,
             sourceLength: codeLine.length,
-            segments: [{ text: codeLine, sourceOffset: offset, sourceLength: codeLine.length, style: MARKDOWN_STYLES.codeBlock }],
+            segments: [
+              {
+                text: codeLine,
+                sourceOffset: offset,
+                sourceLength: codeLine.length,
+                style: { ...MARKDOWN_STYLES.codeBlock },
+              },
+            ],
             indent: 0,
             isBlank: false,
           });
@@ -453,11 +543,23 @@ function renderBlocks(blocks: Block[], terminalWidth: number): RenderedLine[] {
           const text = quoteLine.replace(/^>\s?/, "");
           const prefixLen = quoteLine.length - text.length;
           const quoteSegments = [
-            { text: "│ ", sourceOffset: offset, sourceLength: prefixLen, style: { color: "gray" } as Partial<SegmentStyle> },
-            ...parseInline(text, offset + prefixLen, MARKDOWN_STYLES.blockquote),
+            {
+              text: "│ ",
+              sourceOffset: offset,
+              sourceLength: prefixLen,
+              style: { color: "gray" } as Partial<SegmentStyle>,
+            },
+            ...parseInline(
+              text,
+              offset + prefixLen,
+              MARKDOWN_STYLES.blockquote,
+            ),
           ];
           // Word wrap blockquote content
-          const wrappedQuote = wordWrapSegments(quoteSegments, terminalWidth - 2);
+          const wrappedQuote = wordWrapSegments(
+            quoteSegments,
+            terminalWidth - 2,
+          );
           for (const wl of wrappedQuote) {
             wl.lineNumber = lineNumber++;
             wl.sourceOffset = offset;
@@ -480,11 +582,18 @@ function renderBlocks(blocks: Block[], terminalWidth: number): RenderedLine[] {
             continue;
           }
           const bullet = block.ordered ? `${itemNum++}. ` : "• ";
-          const text = listLine.replace(/^[-*+]\s+/, "").replace(/^\d+\.\s+/, "");
+          const text = listLine
+            .replace(/^[-*+]\s+/, "")
+            .replace(/^\d+\.\s+/, "");
           const prefixLength = listLine.length - text.length;
 
           const listSegments = [
-            { text: bullet, sourceOffset: offset, sourceLength: prefixLength, style: { color: "cyan" } as Partial<SegmentStyle> },
+            {
+              text: bullet,
+              sourceOffset: offset,
+              sourceLength: prefixLength,
+              style: { color: "cyan" } as Partial<SegmentStyle>,
+            },
             ...parseInline(text, offset + prefixLength, {}),
           ];
           // Word wrap list items
@@ -521,7 +630,10 @@ function renderBlocks(blocks: Block[], terminalWidth: number): RenderedLine[] {
 }
 
 // Apply diffs to segments
-function applyDiffs(segments: LineSegment[], diffs: DocumentDiff[]): LineSegment[] {
+function applyDiffs(
+  segments: LineSegment[],
+  diffs: DocumentDiff[],
+): LineSegment[] {
   if (diffs.length === 0) return segments;
 
   const result: LineSegment[] = [];
@@ -532,7 +644,7 @@ function applyDiffs(segments: LineSegment[], diffs: DocumentDiff[]): LineSegment
 
     // Find overlapping diffs
     const overlapping = diffs.filter(
-      (d) => d.startOffset < segEnd && d.endOffset > segStart
+      (d) => d.startOffset < segEnd && d.endOffset > segStart,
     );
 
     if (overlapping.length === 0) {
@@ -542,11 +654,16 @@ function applyDiffs(segments: LineSegment[], diffs: DocumentDiff[]): LineSegment
 
     // Split segment at diff boundaries
     let textPos = 0;
-    const sortedDiffs = [...overlapping].sort((a, b) => a.startOffset - b.startOffset);
+    const sortedDiffs = [...overlapping].sort(
+      (a, b) => a.startOffset - b.startOffset,
+    );
 
     for (const diff of sortedDiffs) {
       const diffStartInSeg = Math.max(0, diff.startOffset - segStart);
-      const diffEndInSeg = Math.min(segment.text.length, diff.endOffset - segStart);
+      const diffEndInSeg = Math.min(
+        segment.text.length,
+        diff.endOffset - segStart,
+      );
 
       // Text before diff
       if (diffStartInSeg > textPos) {
@@ -560,6 +677,7 @@ function applyDiffs(segments: LineSegment[], diffs: DocumentDiff[]): LineSegment
 
       // Diff region
       if (diffEndInSeg > diffStartInSeg) {
+        const diffStyle = DIFF_STYLES[diff.type] ?? {};
         result.push({
           ...segment,
           text: segment.text.slice(diffStartInSeg, diffEndInSeg),
@@ -567,7 +685,7 @@ function applyDiffs(segments: LineSegment[], diffs: DocumentDiff[]): LineSegment
           sourceLength: diffEndInSeg - diffStartInSeg,
           style: {
             ...segment.style,
-            ...DIFF_STYLES[diff.type],
+            ...diffStyle,
           },
         });
       }
@@ -593,7 +711,7 @@ function applyDiffs(segments: LineSegment[], diffs: DocumentDiff[]): LineSegment
 function applySelection(
   segments: LineSegment[],
   selectionStart: number | null,
-  selectionEnd: number | null
+  selectionEnd: number | null,
 ): LineSegment[] {
   if (selectionStart === null || selectionEnd === null) return segments;
   if (selectionStart === selectionEnd) return segments; // No selection
@@ -666,7 +784,7 @@ function applySelection(
 export function buildPositionMap(
   lines: RenderedLine[],
   startRow: number,
-  terminalWidth: number
+  terminalWidth: number,
 ): PositionMapping[] {
   const map: PositionMapping[] = [];
   let currentRow = startRow;
@@ -756,12 +874,18 @@ export function MarkdownRenderer({
         segments = applySelection(segments, selectionStart, selectionEnd);
 
         return (
-          <Box key={`line-${line.lineNumber}-${line.sourceOffset}`} paddingLeft={line.indent}>
+          <Box
+            key={`line-${line.lineNumber}-${line.sourceOffset}`}
+            paddingLeft={line.indent}
+          >
             {line.isBlank ? (
               <Text> </Text>
             ) : (
               segments.map((segment, segIdx) => (
-                <SegmentRenderer key={`seg-${segment.sourceOffset}-${segIdx}`} segment={segment} />
+                <SegmentRenderer
+                  key={`seg-${segment.sourceOffset}-${segIdx}`}
+                  segment={segment}
+                />
               ))
             )}
           </Box>

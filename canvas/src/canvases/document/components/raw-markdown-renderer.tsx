@@ -41,8 +41,12 @@ function highlightLine(line: string): HighlightedSegment[] {
 
   // Check for header
   const headerMatch = line.match(/^(#{1,6})\s/);
-  if (headerMatch) {
-    segments.push({ text: headerMatch[1], color: SYNTAX_COLORS.header, bold: true });
+  if (headerMatch && headerMatch[0] && headerMatch[1]) {
+    segments.push({
+      text: headerMatch[1],
+      color: SYNTAX_COLORS.header,
+      bold: true,
+    });
     segments.push({ text: " " });
     // Highlight rest of header line
     const rest = line.slice(headerMatch[0].length);
@@ -59,7 +63,11 @@ function highlightLine(line: string): HighlightedSegment[] {
 
   // Check for code block fence
   if (line.startsWith("```")) {
-    segments.push({ text: line, color: SYNTAX_COLORS.codeBlock, dimColor: true });
+    segments.push({
+      text: line,
+      color: SYNTAX_COLORS.codeBlock,
+      dimColor: true,
+    });
     return segments;
   }
 
@@ -71,11 +79,15 @@ function highlightLine(line: string): HighlightedSegment[] {
 
   // Check for list item
   const listMatch = line.match(/^(\s*)([-*+]|\d+\.)\s/);
-  if (listMatch) {
+  if (listMatch && listMatch[0] && listMatch[2]) {
     if (listMatch[1]) {
       segments.push({ text: listMatch[1] });
     }
-    segments.push({ text: listMatch[2], color: SYNTAX_COLORS.listMarker, bold: true });
+    segments.push({
+      text: listMatch[2],
+      color: SYNTAX_COLORS.listMarker,
+      bold: true,
+    });
     segments.push({ text: " " });
     const rest = line.slice(listMatch[0].length);
     segments.push(...highlightInline(rest));
@@ -88,16 +100,23 @@ function highlightLine(line: string): HighlightedSegment[] {
 }
 
 // Highlight inline markdown elements
-function highlightInline(text: string, baseStyle: Partial<HighlightedSegment> = {}): HighlightedSegment[] {
+function highlightInline(
+  text: string,
+  baseStyle: Partial<HighlightedSegment> = {},
+): HighlightedSegment[] {
   const segments: HighlightedSegment[] = [];
   let remaining = text;
 
   while (remaining.length > 0) {
     // Inline code
     const codeMatch = remaining.match(/^`([^`]+)`/);
-    if (codeMatch) {
+    if (codeMatch && codeMatch[0] && codeMatch[1]) {
       segments.push({ text: "`", color: SYNTAX_COLORS.code, ...baseStyle });
-      segments.push({ text: codeMatch[1], color: SYNTAX_COLORS.code, ...baseStyle });
+      segments.push({
+        text: codeMatch[1],
+        color: SYNTAX_COLORS.code,
+        ...baseStyle,
+      });
       segments.push({ text: "`", color: SYNTAX_COLORS.code, ...baseStyle });
       remaining = remaining.slice(codeMatch[0].length);
       continue;
@@ -105,46 +124,103 @@ function highlightInline(text: string, baseStyle: Partial<HighlightedSegment> = 
 
     // Bold **text**
     const boldMatch = remaining.match(/^\*\*([^*]+)\*\*/);
-    if (boldMatch) {
-      segments.push({ text: "**", color: SYNTAX_COLORS.bold, dimColor: true, ...baseStyle });
-      segments.push({ text: boldMatch[1], color: SYNTAX_COLORS.bold, bold: true, ...baseStyle });
-      segments.push({ text: "**", color: SYNTAX_COLORS.bold, dimColor: true, ...baseStyle });
+    if (boldMatch && boldMatch[0] && boldMatch[1]) {
+      segments.push({
+        text: "**",
+        color: SYNTAX_COLORS.bold,
+        dimColor: true,
+        ...baseStyle,
+      });
+      segments.push({
+        text: boldMatch[1],
+        color: SYNTAX_COLORS.bold,
+        bold: true,
+        ...baseStyle,
+      });
+      segments.push({
+        text: "**",
+        color: SYNTAX_COLORS.bold,
+        dimColor: true,
+        ...baseStyle,
+      });
       remaining = remaining.slice(boldMatch[0].length);
       continue;
     }
 
     // Italic *text*
     const italicMatch = remaining.match(/^\*([^*]+)\*/);
-    if (italicMatch) {
-      segments.push({ text: "*", color: SYNTAX_COLORS.italic, dimColor: true, ...baseStyle });
-      segments.push({ text: italicMatch[1], color: SYNTAX_COLORS.italic, italic: true, ...baseStyle });
-      segments.push({ text: "*", color: SYNTAX_COLORS.italic, dimColor: true, ...baseStyle });
+    if (italicMatch && italicMatch[0] && italicMatch[1]) {
+      segments.push({
+        text: "*",
+        color: SYNTAX_COLORS.italic,
+        dimColor: true,
+        ...baseStyle,
+      });
+      segments.push({
+        text: italicMatch[1],
+        color: SYNTAX_COLORS.italic,
+        italic: true,
+        ...baseStyle,
+      });
+      segments.push({
+        text: "*",
+        color: SYNTAX_COLORS.italic,
+        dimColor: true,
+        ...baseStyle,
+      });
       remaining = remaining.slice(italicMatch[0].length);
       continue;
     }
 
     // Link [text](url)
     const linkMatch = remaining.match(/^\[([^\]]+)\]\(([^)]+)\)/);
-    if (linkMatch) {
-      segments.push({ text: "[", color: SYNTAX_COLORS.link, dimColor: true, ...baseStyle });
-      segments.push({ text: linkMatch[1], color: SYNTAX_COLORS.link, ...baseStyle });
-      segments.push({ text: "](", color: SYNTAX_COLORS.link, dimColor: true, ...baseStyle });
-      segments.push({ text: linkMatch[2], color: SYNTAX_COLORS.linkUrl, dimColor: true, ...baseStyle });
-      segments.push({ text: ")", color: SYNTAX_COLORS.link, dimColor: true, ...baseStyle });
+    if (linkMatch && linkMatch[0] && linkMatch[1] && linkMatch[2]) {
+      segments.push({
+        text: "[",
+        color: SYNTAX_COLORS.link,
+        dimColor: true,
+        ...baseStyle,
+      });
+      segments.push({
+        text: linkMatch[1],
+        color: SYNTAX_COLORS.link,
+        ...baseStyle,
+      });
+      segments.push({
+        text: "](",
+        color: SYNTAX_COLORS.link,
+        dimColor: true,
+        ...baseStyle,
+      });
+      segments.push({
+        text: linkMatch[2],
+        color: SYNTAX_COLORS.linkUrl,
+        dimColor: true,
+        ...baseStyle,
+      });
+      segments.push({
+        text: ")",
+        color: SYNTAX_COLORS.link,
+        dimColor: true,
+        ...baseStyle,
+      });
       remaining = remaining.slice(linkMatch[0].length);
       continue;
     }
 
     // Plain text - take until next special character
     const plainMatch = remaining.match(/^[^`*\[]+/);
-    if (plainMatch) {
+    if (plainMatch && plainMatch[0]) {
       segments.push({ text: plainMatch[0], ...baseStyle });
       remaining = remaining.slice(plainMatch[0].length);
       continue;
     }
 
     // Single special character (didn't match any pattern)
-    segments.push({ text: remaining[0], ...baseStyle });
+    const char = remaining[0];
+    if (char) {
+      segments.push({ text: char, ...baseStyle });
+    }
     remaining = remaining.slice(1);
   }
 
@@ -169,28 +245,32 @@ export function RawMarkdownRenderer({
   if (cursorPosition !== undefined) {
     let charCount = 0;
     for (let i = 0; i < lines.length; i++) {
-      if (charCount + lines[i].length >= cursorPosition) {
+      const lineLen = lines[i]?.length ?? 0;
+      if (charCount + lineLen >= cursorPosition) {
         cursorLine = i;
         cursorCol = cursorPosition - charCount;
         break;
       }
-      charCount += lines[i].length + 1; // +1 for newline
+      charCount += lineLen + 1; // +1 for newline
     }
     // Handle cursor at very end
     if (cursorLine === -1) {
       cursorLine = lines.length - 1;
-      cursorCol = lines[lines.length - 1].length;
+      cursorCol = lines[lines.length - 1]?.length ?? 0;
     }
   }
 
   // Normalize selection bounds
-  const selStart = selectionStart !== null && selectionEnd !== null
-    ? Math.min(selectionStart, selectionEnd)
-    : null;
-  const selEnd = selectionStart !== null && selectionEnd !== null
-    ? Math.max(selectionStart, selectionEnd)
-    : null;
-  const hasSelection = selStart !== null && selEnd !== null && selStart !== selEnd;
+  const selStart =
+    selectionStart != null && selectionEnd != null
+      ? Math.min(selectionStart, selectionEnd)
+      : null;
+  const selEnd =
+    selectionStart != null && selectionEnd != null
+      ? Math.max(selectionStart, selectionEnd)
+      : null;
+  const hasSelection =
+    selStart !== null && selEnd !== null && selStart !== selEnd;
 
   // Calculate line offsets for selection
   const lineOffsets: number[] = [];
@@ -237,7 +317,7 @@ export function RawMarkdownRenderer({
                 hasCursor ? cursorCol : -1,
                 lineSelStart,
                 lineSelEnd,
-                { color: SYNTAX_COLORS.codeBlock }
+                { color: SYNTAX_COLORS.codeBlock },
               )}
             </Box>
           );
@@ -253,7 +333,7 @@ export function RawMarkdownRenderer({
               line,
               hasCursor ? cursorCol : -1,
               lineSelStart,
-              lineSelEnd
+              lineSelEnd,
             )}
           </Box>
         );
@@ -268,7 +348,7 @@ function renderLineWithCursorAndSelection(
   cursorCol: number,
   selStart: number,
   selEnd: number,
-  style: Partial<HighlightedSegment>
+  style: Partial<HighlightedSegment>,
 ): React.ReactNode {
   const hasSelection = selStart >= 0 && selEnd > selStart;
   const hasCursor = cursorCol >= 0;
@@ -282,7 +362,9 @@ function renderLineWithCursorAndSelection(
   const lineLen = line.length || 1; // At least 1 for empty lines
 
   for (let i = 0; i <= line.length; i++) {
-    const char = line[i] || (i === line.length && hasCursor && cursorCol >= line.length ? " " : "");
+    const char =
+      line[i] ||
+      (i === line.length && hasCursor && cursorCol >= line.length ? " " : "");
     if (!char) continue;
 
     const isSelected = hasSelection && i >= selStart && i < selEnd;
@@ -290,15 +372,21 @@ function renderLineWithCursorAndSelection(
 
     if (isCursor) {
       result.push(
-        <Text key={i} backgroundColor="white" color="black">{char}</Text>
+        <Text key={i} backgroundColor="white" color="black">
+          {char}
+        </Text>,
       );
     } else if (isSelected) {
       result.push(
-        <Text key={i} backgroundColor="blue" color="white">{char}</Text>
+        <Text key={i} backgroundColor="blue" color="white">
+          {char}
+        </Text>,
       );
     } else {
       result.push(
-        <Text key={i} color={style.color as any}>{char}</Text>
+        <Text key={i} color={style.color as any}>
+          {char}
+        </Text>,
       );
     }
   }
@@ -312,14 +400,18 @@ function renderSegmentsWithCursorAndSelection(
   originalLine: string,
   cursorCol: number,
   selStart: number,
-  selEnd: number
+  selEnd: number,
 ): React.ReactNode {
   const hasSelection = selStart >= 0 && selEnd > selStart;
   const hasCursor = cursorCol >= 0;
 
   if (segments.length === 0) {
     if (hasCursor && cursorCol >= 0) {
-      return <Text backgroundColor="white" color="black"> </Text>;
+      return (
+        <Text backgroundColor="white" color="black">
+          {" "}
+        </Text>
+      );
     }
     return <Text> </Text>;
   }
@@ -345,20 +437,27 @@ function renderSegmentsWithCursorAndSelection(
 
   for (let segIdx = 0; segIdx < segments.length; segIdx++) {
     const seg = segments[segIdx];
+    if (!seg) continue;
 
     for (let i = 0; i < seg.text.length; i++) {
       const globalIdx = charIndex + i;
       const char = seg.text[i];
-      const isSelected = hasSelection && globalIdx >= selStart && globalIdx < selEnd;
+      if (!char) continue;
+      const isSelected =
+        hasSelection && globalIdx >= selStart && globalIdx < selEnd;
       const isCursor = hasCursor && globalIdx === cursorCol;
 
       if (isCursor) {
         result.push(
-          <Text key={`${segIdx}-${i}`} backgroundColor="white" color="black">{char}</Text>
+          <Text key={`${segIdx}-${i}`} backgroundColor="white" color="black">
+            {char}
+          </Text>,
         );
       } else if (isSelected) {
         result.push(
-          <Text key={`${segIdx}-${i}`} backgroundColor="blue" color="white">{char}</Text>
+          <Text key={`${segIdx}-${i}`} backgroundColor="blue" color="white">
+            {char}
+          </Text>,
         );
       } else {
         result.push(
@@ -370,7 +469,7 @@ function renderSegmentsWithCursorAndSelection(
             dimColor={seg.dimColor}
           >
             {char}
-          </Text>
+          </Text>,
         );
       }
     }
@@ -381,7 +480,9 @@ function renderSegmentsWithCursorAndSelection(
   // Cursor at end of line
   if (hasCursor && cursorCol >= charIndex) {
     result.push(
-      <Text key="cursor-end" backgroundColor="white" color="black">{" "}</Text>
+      <Text key="cursor-end" backgroundColor="white" color="black">
+        {" "}
+      </Text>,
     );
   }
 

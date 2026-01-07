@@ -15,7 +15,12 @@ interface Props {
   scenario?: string;
 }
 
-export function Document({ id, config: initialConfig, socketPath, scenario = "display" }: Props) {
+export function Document({
+  id,
+  config: initialConfig,
+  socketPath,
+  scenario = "display",
+}: Props) {
   const { exit } = useApp();
   const { stdout } = useStdout();
 
@@ -39,7 +44,9 @@ export function Document({ id, config: initialConfig, socketPath, scenario = "di
   const isDraggingRef = useRef(false);
 
   // Live config state (can be updated via IPC)
-  const [liveConfig, setLiveConfig] = useState<DocumentConfig | undefined>(initialConfig);
+  const [liveConfig, setLiveConfig] = useState<DocumentConfig | undefined>(
+    initialConfig,
+  );
 
   // IPC for communicating with Claude (server mode for CLI)
   const ipc = useIPCServer({
@@ -118,9 +125,13 @@ export function Document({ id, config: initialConfig, socketPath, scenario = "di
   const footerHeight = 2;
   // Email header takes extra lines: from, to, cc (optional), bcc (optional), subject, separator
   const emailHeaderLines = isEmailPreview
-    ? 3 + (emailCc && emailCc.length > 0 ? 1 : 0) + (emailBcc && emailBcc.length > 0 ? 1 : 0) + 2
+    ? 3 +
+      (emailCc && emailCc.length > 0 ? 1 : 0) +
+      (emailBcc && emailBcc.length > 0 ? 1 : 0) +
+      2
     : 0;
-  const viewportHeight = termHeight - headerHeight - footerHeight - emailHeaderLines - 2;
+  const viewportHeight =
+    termHeight - headerHeight - footerHeight - emailHeaderLines - 2;
 
   // Line count and max scroll
   const totalLines = content.split("\n").length;
@@ -132,52 +143,65 @@ export function Document({ id, config: initialConfig, socketPath, scenario = "di
   const contentStartRow = headerHeight + 1 + 1; // title + marginBottom + border + padding
 
   // Helper: convert terminal coordinates to content offset
-  const terminalToOffset = useCallback((termX: number, termY: number): number => {
-    const lines = content.split("\n");
+  const terminalToOffset = useCallback(
+    (termX: number, termY: number): number => {
+      const lines = content.split("\n");
 
-    // Adjust for content area offset and scroll
-    const col = termX - contentStartCol;
-    const row = termY - contentStartRow + scrollOffset;
+      // Adjust for content area offset and scroll
+      const col = termX - contentStartCol;
+      const row = termY - contentStartRow + scrollOffset;
 
-    // Clamp row to valid range
-    const clampedRow = Math.max(0, Math.min(row, lines.length - 1));
+      // Clamp row to valid range
+      const clampedRow = Math.max(0, Math.min(row, lines.length - 1));
 
-    // Calculate character offset
-    let offset = 0;
-    for (let i = 0; i < clampedRow; i++) {
-      offset += lines[i].length + 1; // +1 for newline
-    }
+      // Calculate character offset
+      let offset = 0;
+      for (let i = 0; i < clampedRow; i++) {
+        offset += (lines[i]?.length ?? 0) + 1; // +1 for newline
+      }
 
-    // Add column offset, clamped to line length
-    const lineLength = lines[clampedRow]?.length || 0;
-    offset += Math.max(0, Math.min(col, lineLength));
+      // Add column offset, clamped to line length
+      const lineLength = lines[clampedRow]?.length || 0;
+      offset += Math.max(0, Math.min(col, lineLength));
 
-    return Math.min(offset, content.length);
-  }, [content, contentStartCol, contentStartRow, scrollOffset]);
+      return Math.min(offset, content.length);
+    },
+    [content, contentStartCol, contentStartRow, scrollOffset],
+  );
 
   // Mouse handlers
-  const handleMouseClick = useCallback((event: { x: number; y: number }) => {
-    if (readOnly) return;
+  const handleMouseClick = useCallback(
+    (event: { x: number; y: number }) => {
+      if (readOnly) return;
 
-    const offset = terminalToOffset(event.x, event.y);
-    setCursorPosition(offset);
-    setSelectionStart(offset);
-    setSelectionEnd(null);
-    isDraggingRef.current = true;
-  }, [readOnly, terminalToOffset]);
+      const offset = terminalToOffset(event.x, event.y);
+      setCursorPosition(offset);
+      setSelectionStart(offset);
+      setSelectionEnd(null);
+      isDraggingRef.current = true;
+    },
+    [readOnly, terminalToOffset],
+  );
 
-  const handleMouseMove = useCallback((event: { x: number; y: number }) => {
-    if (readOnly || !isDraggingRef.current) return;
+  const handleMouseMove = useCallback(
+    (event: { x: number; y: number }) => {
+      if (readOnly || !isDraggingRef.current) return;
 
-    const offset = terminalToOffset(event.x, event.y);
-    setSelectionEnd(offset);
-    setCursorPosition(offset);
-  }, [readOnly, terminalToOffset]);
+      const offset = terminalToOffset(event.x, event.y);
+      setSelectionEnd(offset);
+      setCursorPosition(offset);
+    },
+    [readOnly, terminalToOffset],
+  );
 
   const handleMouseRelease = useCallback(() => {
     isDraggingRef.current = false;
     // If selection start equals end, clear selection (just a click)
-    if (selectionStart !== null && selectionEnd !== null && selectionStart === selectionEnd) {
+    if (
+      selectionStart !== null &&
+      selectionEnd !== null &&
+      selectionStart === selectionEnd
+    ) {
       setSelectionEnd(null);
     }
   }, [selectionStart, selectionEnd]);
@@ -224,14 +248,18 @@ export function Document({ id, config: initialConfig, socketPath, scenario = "di
   }, []);
 
   // Helper: ensure cursor is visible by adjusting scroll
-  const ensureCursorVisible = useCallback((pos: number, text: string) => {
-    const cursorLine = getCursorLine(pos, text);
-    setScrollOffset((offset) => {
-      if (cursorLine < offset) return cursorLine;
-      if (cursorLine >= offset + viewportHeight) return cursorLine - viewportHeight + 1;
-      return offset;
-    });
-  }, [getCursorLine, viewportHeight]);
+  const ensureCursorVisible = useCallback(
+    (pos: number, text: string) => {
+      const cursorLine = getCursorLine(pos, text);
+      setScrollOffset((offset) => {
+        if (cursorLine < offset) return cursorLine;
+        if (cursorLine >= offset + viewportHeight)
+          return cursorLine - viewportHeight + 1;
+        return offset;
+      });
+    },
+    [getCursorLine, viewportHeight],
+  );
 
   // Keyboard controls
   useInput((input, key) => {
@@ -304,9 +332,9 @@ export function Document({ id, config: initialConfig, socketPath, scenario = "di
       if (currentLine > 0) {
         let newPos = 0;
         for (let l = 0; l < currentLine - 1; l++) {
-          newPos += lines[l].length + 1;
+          newPos += (lines[l]?.length ?? 0) + 1;
         }
-        newPos += Math.min(colInLine, lines[currentLine - 1].length);
+        newPos += Math.min(colInLine, lines[currentLine - 1]?.length ?? 0);
         setCursorPosition(newPos);
         ensureCursorVisible(newPos, text);
       }
@@ -329,9 +357,9 @@ export function Document({ id, config: initialConfig, socketPath, scenario = "di
       if (currentLine < lines.length - 1) {
         let newPos = 0;
         for (let l = 0; l <= currentLine; l++) {
-          newPos += lines[l].length + 1;
+          newPos += (lines[l]?.length ?? 0) + 1;
         }
-        newPos += Math.min(colInLine, lines[currentLine + 1].length);
+        newPos += Math.min(colInLine, lines[currentLine + 1]?.length ?? 0);
         setCursorPosition(Math.min(newPos, text.length));
         ensureCursorVisible(Math.min(newPos, text.length), text);
       }
@@ -373,7 +401,10 @@ export function Document({ id, config: initialConfig, socketPath, scenario = "di
       if (selection) {
         const result = deleteSelection();
         if (result) {
-          const newText = result.newText.slice(0, result.newCursor) + "\n" + result.newText.slice(result.newCursor);
+          const newText =
+            result.newText.slice(0, result.newCursor) +
+            "\n" +
+            result.newText.slice(result.newCursor);
           setContent(newText);
           setCursorPosition(result.newCursor + 1);
           clearSelection();
@@ -393,7 +424,10 @@ export function Document({ id, config: initialConfig, socketPath, scenario = "di
       if (selection) {
         const result = deleteSelection();
         if (result) {
-          const newText = result.newText.slice(0, result.newCursor) + input + result.newText.slice(result.newCursor);
+          const newText =
+            result.newText.slice(0, result.newCursor) +
+            input +
+            result.newText.slice(result.newCursor);
           setContent(newText);
           setCursorPosition(result.newCursor + input.length);
           clearSelection();
@@ -410,7 +444,8 @@ export function Document({ id, config: initialConfig, socketPath, scenario = "di
   });
 
   // Scroll indicator
-  const scrollPercent = maxScroll > 0 ? Math.round((scrollOffset / maxScroll) * 100) : 100;
+  const scrollPercent =
+    maxScroll > 0 ? Math.round((scrollOffset / maxScroll) * 100) : 100;
 
   // Calculate cursor line and column for display
   const cursorLine = getCursorLine(cursorPosition, content);
@@ -430,7 +465,7 @@ export function Document({ id, config: initialConfig, socketPath, scenario = "di
       <Box justifyContent="center" marginBottom={1}>
         <Box width={docWidth}>
           <Text bold color="white">
-            {isEmailPreview ? "Email Preview" : (title || "Document")}
+            {isEmailPreview ? "Email Preview" : title || "Document"}
           </Text>
           <Box flexGrow={1} />
           <Text color="gray" dimColor>
@@ -476,13 +511,18 @@ export function Document({ id, config: initialConfig, socketPath, scenario = "di
       <Box justifyContent="center">
         <Box width={docWidth} justifyContent="space-between">
           <Text color="gray" dimColor>
-            {readOnly ? "↑↓ scroll • Esc quit" : "click/drag select • type to edit • Esc quit"}
+            {readOnly
+              ? "↑↓ scroll • Esc quit"
+              : "click/drag select • type to edit • Esc quit"}
           </Text>
           <Text color="gray" dimColor>
             {!readOnly && (
               <Text color="cyan">
                 Ln {cursorLine + 1}, Col {cursorCol + 1}
-                <Text color="gray" dimColor> • </Text>
+                <Text color="gray" dimColor>
+                  {" "}
+                  •{" "}
+                </Text>
               </Text>
             )}
             {totalLines > viewportHeight
