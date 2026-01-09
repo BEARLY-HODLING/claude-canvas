@@ -1,4 +1,60 @@
-// Flight Booking Canvas - Type Definitions
+// Flight Canvas - Type Definitions (Booking + Tracker modes)
+
+// =============================================================================
+// TRACKER MODE TYPES (Real-time flight tracking via OpenSky)
+// =============================================================================
+
+export interface TrackedFlight {
+  icao24: string; // Unique ICAO 24-bit address
+  callsign: string; // Flight callsign (e.g., "UAL123")
+  flightNumber: string; // Formatted flight number (e.g., "UA123")
+  airline: string | null; // Airline name if recognized
+  originCountry: string; // Country of aircraft registration
+
+  // Position
+  latitude: number | null;
+  longitude: number | null;
+  altitude: number | null; // Feet
+  altitudeMeters: number | null; // Original meters value
+
+  // Movement
+  speed: number | null; // Knots
+  speedMs: number | null; // Original m/s value
+  heading: number | null; // Degrees
+  headingCardinal: string; // N, NE, E, etc.
+  verticalRate: number | null; // ft/min
+  onGround: boolean;
+
+  // Timestamps
+  lastContact: Date;
+  lastPosition: Date | null;
+
+  // Status
+  status: "airborne" | "ground" | "unknown";
+}
+
+export interface TrackerConfig {
+  mode: "tracker";
+  title?: string;
+  searchQuery?: string; // Initial search query (callsign or flight number)
+  refreshInterval?: number; // Auto-refresh interval in seconds (default: 10)
+  trackedFlights?: TrackedFlight[]; // Pre-populated flights to display
+  nearLocation?: {
+    // Show flights near a location
+    latitude: number;
+    longitude: number;
+    radiusDegrees?: number;
+  };
+}
+
+export interface TrackerResult {
+  selectedFlight: TrackedFlight;
+  action: "view" | "track" | "close";
+}
+
+// =============================================================================
+// BOOKING MODE TYPES (Original demo booking mode)
+// =============================================================================
 
 export interface Airport {
   code: string; // 3-letter code, e.g., "SFO"
@@ -34,10 +90,27 @@ export interface Flight {
 }
 
 export interface FlightConfig {
-  flights: Flight[];
+  mode?: "booking" | "tracker"; // Default: "booking" for backwards compatibility
+  flights?: Flight[]; // Booking mode flights
   title?: string; // Optional title for the canvas
   showSeatmap?: boolean; // Enable seat selection mode
   selectedFlightId?: string; // Pre-select a flight by ID
+
+  // Tracker mode options (when mode === "tracker")
+  searchQuery?: string; // Initial search query (callsign or flight number)
+  refreshInterval?: number; // Auto-refresh interval in seconds (default: 10)
+  trackedFlights?: TrackedFlight[]; // Pre-populated flights to display
+  nearLocation?: {
+    latitude: number;
+    longitude: number;
+    radiusDegrees?: number;
+  };
+  route?: {
+    // Search flights on a specific route
+    origin: string; // Origin airport code (IATA or ICAO)
+    destination: string; // Destination airport code (IATA or ICAO)
+    toleranceDegrees?: number; // How close to route (default: 2)
+  };
 }
 
 export interface FlightResult {

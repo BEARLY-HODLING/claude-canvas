@@ -10,7 +10,11 @@ export interface UseIPCServerOptions {
   scenario: string;
   onClose?: () => void;
   onUpdate?: (config: unknown) => void;
-  onGetSelection?: () => { selectedText: string; startOffset: number; endOffset: number } | null;
+  onGetSelection?: () => {
+    selectedText: string;
+    startOffset: number;
+    endOffset: number;
+  } | null;
   onGetContent?: () => { content: string; cursorPosition: number };
 }
 
@@ -20,10 +24,18 @@ export interface IPCServerHandle {
   sendSelected: (data: unknown) => void;
   sendCancelled: (reason?: string) => void;
   sendError: (message: string) => void;
+  sendAlert: (alert: { type: string; message: string; data?: unknown }) => void;
 }
 
 export function useIPCServer(options: UseIPCServerOptions): IPCServerHandle {
-  const { socketPath, scenario, onClose, onUpdate, onGetSelection, onGetContent } = options;
+  const {
+    socketPath,
+    scenario,
+    onClose,
+    onUpdate,
+    onGetSelection,
+    onGetContent,
+  } = options;
   const { exit } = useApp();
   const [isConnected, setIsConnected] = useState(false);
   const serverRef = useRef<IPCServer | null>(null);
@@ -123,11 +135,19 @@ export function useIPCServer(options: UseIPCServerOptions): IPCServerHandle {
     serverRef.current?.broadcast({ type: "error", message });
   }, []);
 
+  const sendAlert = useCallback(
+    (alert: { type: string; message: string; data?: unknown }) => {
+      serverRef.current?.broadcast({ type: "alert", alert });
+    },
+    [],
+  );
+
   return {
     isConnected,
     sendReady,
     sendSelected,
     sendCancelled,
     sendError,
+    sendAlert,
   };
 }
