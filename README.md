@@ -1,8 +1,8 @@
 # Claude Canvas
 
-A TUI toolkit that gives Claude Code its own display. Spawn interactive terminal interfaces for calendars, documents, flight bookings, and more.
+A TUI toolkit that gives Claude Code its own display. Spawn interactive terminal interfaces for calendars, documents, flight tracking, weather, system monitoring, and more.
 
-**Note:** Fork of [dvdsgl/claude-canvas](https://github.com/dvdsgl/claude-canvas) with added iTerm2 and Apple Terminal support.
+**Note:** Fork of [dvdsgl/claude-canvas](https://github.com/dvdsgl/claude-canvas) with added iTerm2/Apple Terminal support and real-time data canvases.
 
 ![Claude Canvas Screenshot](media/screenshot.png)
 
@@ -28,42 +28,163 @@ cd canvas && bun install && cd ..
 # Check your terminal environment
 bun run canvas/src/cli.ts env
 
-# Spawn calendar canvas
+# Spawn a canvas
 bun run canvas/src/cli.ts spawn calendar
+bun run canvas/src/cli.ts spawn tracker
+bun run canvas/src/cli.ts spawn weather
+bun run canvas/src/cli.ts spawn system
 ```
 
 ## Canvas Types
 
-| Canvas     | Description                       | Scenarios                          |
-| ---------- | --------------------------------- | ---------------------------------- |
-| `calendar` | Weekly view, meeting picker       | `display`, `meeting-picker`        |
-| `document` | Markdown viewer/editor            | `display`, `edit`, `email-preview` |
-| `flight`   | Flight comparison, seat selection | `booking`                          |
+| Canvas     | Description                       | Key Features                                    |
+| ---------- | --------------------------------- | ----------------------------------------------- |
+| `calendar` | Weekly view, meeting picker       | Navigate weeks, select time slots               |
+| `document` | Markdown viewer/editor            | Display, edit, email preview modes              |
+| `flight`   | Flight comparison UI              | Seat selection, booking interface               |
+| `tracker`  | **Real-time flight tracking**     | Live positions, watchlist, ASCII world map      |
+| `weather`  | **Weather conditions & forecast** | Current conditions, 7-day forecast, city search |
+| `system`   | **System monitor**                | CPU sparklines, memory, disk, top processes     |
 
-### Calendar Controls
+### Global Keybindings (v0.6)
 
-| Key            | Action             |
-| -------------- | ------------------ |
-| `←` / `→`      | Navigate weeks     |
-| `t`            | Jump to today      |
-| `n` / `p`      | Next/previous week |
-| `q` / `Ctrl+C` | Exit               |
+| Key   | Action                              |
+| ----- | ----------------------------------- |
+| `?`   | Show help overlay with all controls |
+| `Tab` | Open canvas navigator               |
+| `q`   | Exit canvas                         |
 
-### Usage Examples
+---
+
+## Flight Tracker (`tracker`)
+
+Real-time flight tracking using the free OpenSky Network API.
 
 ```bash
-# Calendar with custom events
+bun run canvas/src/cli.ts spawn tracker
+```
+
+### Features
+
+- Search flights by callsign (e.g., `UAL123`, `BAW456`)
+- Search flights by route (origin → destination airports)
+- Live position tracking with auto-refresh (5-60 second intervals)
+- ASCII world map with filled continents showing flight positions
+- Watchlist to track multiple flights simultaneously
+- Status change alerts via IPC
+
+### Controls
+
+| Key       | Action                  |
+| --------- | ----------------------- |
+| `s`       | Search by callsign      |
+| `r`       | Search by route         |
+| `w`       | Add to watchlist        |
+| `W`       | Remove from watchlist   |
+| `↑` / `↓` | Navigate flight list    |
+| `+` / `-` | Adjust refresh interval |
+| `Space`   | Manual refresh          |
+
+### Map Legend
+
+| Symbol | Meaning |
+| ------ | ------- |
+| `█`    | Land    |
+| `░`    | Ocean   |
+| `◉`    | Airport |
+| `↑↗→↘` | Flight  |
+
+---
+
+## Weather Canvas (`weather`)
+
+Weather conditions and forecasts using the free Open-Meteo API (no API key required).
+
+```bash
+bun run canvas/src/cli.ts spawn weather
+```
+
+### Features
+
+- Current conditions: temperature, feels like, humidity, wind, precipitation
+- 7-day forecast with high/low temps and rain probability
+- Weather icons using WMO codes (☀️ ☁️ 🌧️ ⛈️ ❄️)
+- City search via geocoding
+- Location watchlist for quick switching
+
+### Controls
+
+| Key       | Action                |
+| --------- | --------------------- |
+| `/`       | Search for city       |
+| `w`       | Add to watchlist      |
+| `W`       | Remove from watchlist |
+| `↑` / `↓` | Navigate locations    |
+| `Enter`   | Select location       |
+
+---
+
+## System Monitor (`system`)
+
+Real-time system resource monitoring.
+
+```bash
+bun run canvas/src/cli.ts spawn system
+```
+
+### Features
+
+- CPU usage with 40-point sparkline history
+- Memory usage with progress bars
+- Disk usage for all mounted volumes
+- Top processes sorted by CPU usage
+- Alert thresholds for CPU (80%), memory (90%), disk (95%)
+- Pause/resume monitoring
+
+### Controls
+
+| Key       | Action                  |
+| --------- | ----------------------- |
+| `p`       | Pause/resume monitoring |
+| `+` / `-` | Adjust refresh interval |
+| `↑` / `↓` | Scroll process list     |
+
+---
+
+## Calendar Canvas (`calendar`)
+
+Weekly calendar view with meeting time picker.
+
+```bash
+# Basic calendar
+bun run canvas/src/cli.ts spawn calendar
+
+# With events
 bun run canvas/src/cli.ts spawn calendar --config '{"events":[{"title":"Meeting","start":"2025-01-07T10:00","end":"2025-01-07T11:00","color":"blue"}]}'
 
 # Meeting picker mode
 bun run canvas/src/cli.ts spawn calendar --scenario meeting-picker
-
-# Document viewer
-bun run canvas/src/cli.ts spawn document --config '{"content":"# Hello World\n\nThis is markdown."}'
-
-# Flight booking
-bun run canvas/src/cli.ts spawn flight
 ```
+
+### Controls
+
+| Key       | Action             |
+| --------- | ------------------ |
+| `←` / `→` | Navigate weeks     |
+| `t`       | Jump to today      |
+| `n` / `p` | Next/previous week |
+
+---
+
+## Document Canvas (`document`)
+
+Markdown viewer and editor.
+
+```bash
+bun run canvas/src/cli.ts spawn document --config '{"content":"# Hello World\n\nThis is markdown."}'
+```
+
+---
 
 ## Terminal Support
 
@@ -82,7 +203,7 @@ The canvas **automatically detects** your terminal and uses the appropriate meth
 ```
 ┌─────────────────────┬─────────────────────┐
 │ Claude Code         │ Canvas              │
-│ (your terminal)     │ (calendar/doc/etc)  │
+│ (your terminal)     │ (tracker/weather/…) │
 └─────────────────────┴─────────────────────┘
 ```
 
@@ -98,11 +219,21 @@ The canvas **automatically detects** your terminal and uses the appropriate meth
 
 ### Session Reuse
 
-Canvas tracks open panes/windows and **reuses them** for subsequent spawns instead of creating new ones. Tracking files:
+Canvas tracks open panes/windows and **reuses them** for subsequent spawns instead of creating new ones.
 
-- `/tmp/claude-canvas-iterm2-session`
-- `/tmp/claude-canvas-pane-id` (tmux)
-- `/tmp/claude-canvas-terminal-window` (Apple Terminal)
+---
+
+## APIs Used
+
+| API                 | Canvas    | Free Tier   | Data                            |
+| ------------------- | --------- | ----------- | ------------------------------- |
+| OpenSky Network     | `tracker` | Unlimited\* | Live aircraft position/velocity |
+| Open-Meteo          | `weather` | Unlimited   | Weather, forecast, geocoding    |
+| Node.js `os` module | `system`  | Built-in    | CPU, memory, network            |
+
+\*Rate limited for unauthenticated requests
+
+---
 
 ## Claude Code Plugin Installation
 
@@ -114,6 +245,8 @@ Canvas tracks open panes/windows and **reuses them** for subsequent spawns inste
 /plugin install canvas@claude-canvas
 ```
 
+---
+
 ## Development
 
 ```bash
@@ -121,11 +254,16 @@ Canvas tracks open panes/windows and **reuses them** for subsequent spawns inste
 bun run canvas/src/cli.ts [command]
 
 # Show canvas in current terminal (for testing)
-bun run canvas/src/cli.ts show calendar
+bun run canvas/src/cli.ts show tracker
 
 # Check terminal detection
 bun run canvas/src/cli.ts env
+
+# Run tests
+cd canvas && bun test
 ```
+
+---
 
 ## License
 
