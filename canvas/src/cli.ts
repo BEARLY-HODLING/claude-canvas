@@ -57,20 +57,37 @@ program
     console.log("Terminal Environment:");
     console.log(`  In tmux: ${env.inTmux}`);
     console.log(`  In iTerm2: ${env.inITerm2}`);
+    console.log(`  In Kitty: ${env.inKitty}`);
+    console.log(`  In WezTerm: ${env.inWezTerm}`);
+    console.log(`  In Alacritty: ${env.inAlacritty}`);
+    console.log(`  In VS Code: ${env.inVSCode}`);
     console.log(`  In Apple Terminal: ${env.inAppleTerminal}`);
     console.log(`  Terminal type: ${env.terminalType}`);
     console.log(`\nSummary: ${env.summary}`);
 
-    if (env.terminalType === "apple-terminal") {
+    if (env.terminalType === "wezterm") {
       console.log(
-        "\n📺 Apple Terminal detected - canvas will open in a new window.",
+        "\nWezTerm detected - canvas will open in a split pane to the right.",
+      );
+    } else if (env.terminalType === "vscode") {
+      console.log("\nVS Code detected - canvas will spawn in a new process.");
+      console.log(
+        "   Use Cmd/Ctrl+Shift+5 to split your terminal for side-by-side view.",
+      );
+    } else if (env.terminalType === "apple-terminal") {
+      console.log(
+        "\nApple Terminal detected - canvas will open in a new window.",
       );
       console.log(
         "   The window will be positioned on the right side of your screen.",
       );
+    } else if (env.terminalType === "alacritty") {
+      console.log("\nAlacritty detected - canvas will open in a new window.");
     } else if (env.terminalType === "none") {
-      console.log("\n⚠️  No supported terminal detected.");
-      console.log("   Supported: iTerm2, tmux, Apple Terminal");
+      console.log("\nNo supported terminal detected.");
+      console.log(
+        "   Supported: iTerm2, tmux, Kitty, WezTerm, VS Code, Alacritty, Apple Terminal",
+      );
     }
   });
 

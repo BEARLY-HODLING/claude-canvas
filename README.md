@@ -12,6 +12,9 @@ A TUI toolkit that gives Claude Code its own display. Spawn interactive terminal
 - **One of:**
   - **iTerm2** — split panes (recommended for macOS)
   - **tmux** — split panes (cross-platform)
+  - **Kitty** — split panes (GPU-accelerated)
+  - **WezTerm** — split panes (cross-platform)
+  - **Alacritty** — new window mode (GPU-accelerated)
   - **Apple Terminal** — new window mode (auto-positioned)
 
 ## Quick Start
@@ -33,18 +36,32 @@ bun run canvas/src/cli.ts spawn calendar
 bun run canvas/src/cli.ts spawn tracker
 bun run canvas/src/cli.ts spawn weather
 bun run canvas/src/cli.ts spawn system
+bun run canvas/src/cli.ts spawn dashboard
+bun run canvas/src/cli.ts spawn pomodoro
+bun run canvas/src/cli.ts spawn notes
+bun run canvas/src/cli.ts spawn crypto
+bun run canvas/src/cli.ts spawn github
+bun run canvas/src/cli.ts spawn docker
+bun run canvas/src/cli.ts spawn network
 ```
 
 ## Canvas Types
 
-| Canvas     | Description                       | Key Features                                    |
-| ---------- | --------------------------------- | ----------------------------------------------- |
-| `calendar` | Weekly view, meeting picker       | Navigate weeks, select time slots               |
-| `document` | Markdown viewer/editor            | Display, edit, email preview modes              |
-| `flight`   | Flight comparison UI              | Seat selection, booking interface               |
-| `tracker`  | **Real-time flight tracking**     | Live positions, watchlist, ASCII world map      |
-| `weather`  | **Weather conditions & forecast** | Current conditions, 7-day forecast, city search |
-| `system`   | **System monitor**                | CPU sparklines, memory, disk, top processes     |
+| Canvas      | Description                       | Key Features                                     |
+| ----------- | --------------------------------- | ------------------------------------------------ |
+| `calendar`  | Weekly view, meeting picker       | Navigate weeks, select time slots                |
+| `document`  | Markdown viewer/editor            | Display, edit, email preview modes               |
+| `flight`    | Flight comparison UI              | Seat selection, booking interface                |
+| `tracker`   | **Real-time flight tracking**     | Live positions, watchlist, ASCII world map       |
+| `weather`   | **Weather conditions & forecast** | Current conditions, 7-day forecast, city search  |
+| `system`    | **System monitor**                | CPU sparklines, memory, disk, top processes      |
+| `dashboard` | **Unified dashboard**             | Weather, system, calendar, clock widgets         |
+| `pomodoro`  | **Pomodoro timer**                | Work/break cycles, ASCII timer, session tracking |
+| `notes`     | **Quick notes/scratchpad**        | Auto-save, search, timestamps                    |
+| `crypto`    | **Cryptocurrency tracker**        | BTC/ETH/SOL prices, 24h change, sparklines       |
+| `github`    | **GitHub PR/issue monitor**       | PR tracking, repo stats, status indicators       |
+| `docker`    | **Docker container monitor**      | Container status, CPU/memory, logs               |
+| `network`   | **Network ping monitor**          | Latency sparklines, packet loss, multi-host      |
 
 ### Global Keybindings (v0.6)
 
@@ -151,6 +168,94 @@ bun run canvas/src/cli.ts spawn system
 
 ---
 
+## Dashboard Canvas (`dashboard`)
+
+Unified dashboard combining multiple widgets in a single view.
+
+```bash
+bun run canvas/src/cli.ts spawn dashboard
+```
+
+### Features
+
+- Weather widget with current conditions and mini forecast
+- System monitor widget with CPU/memory sparklines
+- Calendar widget showing today's events and upcoming schedule
+- Digital clock with date display
+- Responsive grid layout adapts to terminal size
+- All widgets update in real-time
+
+### Controls
+
+| Key       | Action                      |
+| --------- | --------------------------- |
+| `Tab`     | Cycle focus between widgets |
+| `r`       | Refresh all widgets         |
+| `1-4`     | Focus specific widget       |
+| `+` / `-` | Adjust refresh interval     |
+
+---
+
+## Pomodoro Canvas (`pomodoro`)
+
+Pomodoro timer with work and break cycles for focused productivity.
+
+```bash
+bun run canvas/src/cli.ts spawn pomodoro
+```
+
+### Features
+
+- Standard Pomodoro cycles: 25 min work, 5 min short break, 15 min long break
+- Large ASCII timer display for visibility
+- Session tracking with completed pomodoro count
+- Audio/visual notifications on cycle completion
+- Automatic transition between work and break periods
+- Statistics view showing daily/weekly productivity
+
+### Controls
+
+| Key       | Action                          |
+| --------- | ------------------------------- |
+| `Space`   | Start/pause timer               |
+| `r`       | Reset current timer             |
+| `s`       | Skip to next cycle              |
+| `+` / `-` | Adjust work duration (+/- 5min) |
+| `Tab`     | Toggle statistics view          |
+
+---
+
+## Notes Canvas (`notes`)
+
+Quick notes and scratchpad with persistent storage.
+
+```bash
+bun run canvas/src/cli.ts spawn notes
+```
+
+### Features
+
+- Auto-save notes to local storage
+- Searchable note history
+- Timestamps on all entries
+- Markdown preview support
+- Quick capture mode for rapid note-taking
+- Export notes to file
+
+### Controls
+
+| Key       | Action                   |
+| --------- | ------------------------ |
+| `n`       | Create new note          |
+| `Enter`   | Edit selected note       |
+| `d`       | Delete selected note     |
+| `/`       | Search notes             |
+| `↑` / `↓` | Navigate note list       |
+| `e`       | Export notes to file     |
+| `Esc`     | Cancel/exit current mode |
+
+---
+
 ## Calendar Canvas (`calendar`)
 
 Weekly calendar view with meeting time picker.
@@ -188,11 +293,14 @@ bun run canvas/src/cli.ts spawn document --config '{"content":"# Hello World\n\n
 
 ## Terminal Support
 
-| Terminal           | Mode       | Setup                            |
-| ------------------ | ---------- | -------------------------------- |
-| **iTerm2**         | Split pane | Just run in iTerm2               |
-| **tmux**           | Split pane | Start a `tmux` session           |
-| **Apple Terminal** | New window | Just run (window auto-positions) |
+| Terminal           | Mode       | Setup                                |
+| ------------------ | ---------- | ------------------------------------ |
+| **iTerm2**         | Split pane | Just run in iTerm2                   |
+| **tmux**           | Split pane | Start a `tmux` session               |
+| **Kitty**          | Split pane | Just run in Kitty (GPU-accelerated)  |
+| **WezTerm**        | Split pane | Just run in WezTerm (cross-platform) |
+| **Alacritty**      | New window | Just run (GPU-accelerated)           |
+| **Apple Terminal** | New window | Just run (window auto-positions)     |
 
 The canvas **automatically detects** your terminal and uses the appropriate method.
 

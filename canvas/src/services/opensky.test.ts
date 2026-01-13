@@ -45,8 +45,9 @@ async function testOpenSkyAPI() {
     }
 
     // Test 2: Search by callsign (if we found any flights)
-    if (sfBayFlights.length > 0 && sfBayFlights[0].callsign) {
-      const searchCallsign = sfBayFlights[0].callsign.trim().substring(0, 3);
+    const firstFlight = sfBayFlights[0];
+    if (sfBayFlights.length > 0 && firstFlight?.callsign) {
+      const searchCallsign = firstFlight.callsign.trim().substring(0, 3);
       console.log(
         `\nTest 2: Searching for flights with callsign prefix "${searchCallsign}"...`,
       );

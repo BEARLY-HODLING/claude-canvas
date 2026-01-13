@@ -139,7 +139,10 @@ export class OpenSkyClient {
       );
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as {
+      time: number;
+      states: unknown[][] | null;
+    };
 
     return {
       time: data.time,

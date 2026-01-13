@@ -66,7 +66,14 @@ function MiniMap({
     lon,
     mapWidth,
     mapHeight,
-    [{ lat, lon, heading: flight.heading, callsign: flight.callsign }],
+    [
+      {
+        lat,
+        lon,
+        heading: flight.heading ?? undefined,
+        callsign: flight.callsign,
+      },
+    ],
     true, // show airports
   );
 

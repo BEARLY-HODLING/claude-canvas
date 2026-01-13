@@ -14,7 +14,7 @@ async function testFlightService() {
 
     if (unitedFlights.length > 0) {
       console.log("Sample flight (TrackedFlight format):");
-      const sample = unitedFlights[0];
+      const sample = unitedFlights[0]!;
       console.log(JSON.stringify(sample, null, 2));
       console.log("\nFormatted info:");
       formatFlightInfo(sample).forEach((line) => console.log(`  ${line}`));

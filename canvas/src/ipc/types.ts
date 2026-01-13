@@ -15,8 +15,16 @@ export type CanvasMessage =
   | { type: "cancelled"; reason?: string }
   | { type: "error"; message: string }
   | { type: "pong" }
-  | { type: "selection"; data: { selectedText: string; startOffset: number; endOffset: number } | null }
-  | { type: "content"; data: { content: string; cursorPosition: number } };
+  | {
+      type: "selection";
+      data: {
+        selectedText: string;
+        startOffset: number;
+        endOffset: number;
+      } | null;
+    }
+  | { type: "content"; data: { content: string; cursorPosition: number } }
+  | { type: "alert"; alert: { type: string; message: string; data?: unknown } };
 
 // Socket path convention
 export function getSocketPath(id: string): string {
