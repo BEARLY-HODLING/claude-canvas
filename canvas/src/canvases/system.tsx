@@ -108,7 +108,7 @@ function CpuPanel({
   );
 }
 
-// Memory panel
+// Memory panel with pressure-based display
 function MemoryPanel({
   memory,
   width,
@@ -125,12 +125,19 @@ function MemoryPanel({
   }
 
   const barWidth = Math.min(30, width - 20);
-  const memColor =
-    memory.usedPercent > 90
+
+  // Use pressure for color (more accurate on macOS)
+  const pressureColor =
+    memory.pressure > 80
       ? CYBER_COLORS.neonRed
-      : memory.usedPercent > 70
+      : memory.pressure > 50
         ? CYBER_COLORS.neonYellow
         : CYBER_COLORS.neonGreen;
+
+  // Calculate available memory (inactive + free on macOS)
+  const available = memory.inactive > 0
+    ? memory.inactive + memory.free
+    : memory.free;
 
   return (
     <Box flexDirection="column" width={width}>
@@ -138,6 +145,7 @@ function MemoryPanel({
         <Text color={CYBER_COLORS.neonMagenta} bold>
           {"[ MEMORY ]"}
         </Text>
+        <Text color={CYBER_COLORS.dim}> {formatBytes(memory.total)}</Text>
       </Box>
       <Box
         flexDirection="column"
@@ -145,22 +153,39 @@ function MemoryPanel({
         borderColor={CYBER_COLORS.dim}
         paddingX={1}
       >
+        {/* Memory Pressure (the important metric) */}
         <Box>
-          <Text color={CYBER_COLORS.dim}>Used: </Text>
-          <Text color={memColor}>
-            {progressBar(memory.usedPercent, barWidth)}
+          <Text color={CYBER_COLORS.dim}>Pressure: </Text>
+          <Text color={pressureColor}>
+            {progressBar(memory.pressure, barWidth)}
           </Text>
-          <Text color={memColor} bold>
+          <Text color={pressureColor} bold>
             {" "}
-            {memory.usedPercent.toFixed(1)}%
+            {memory.pressure}%
           </Text>
         </Box>
+
+        {/* Breakdown: Active vs Available */}
         <Box marginTop={1}>
-          <Text color={CYBER_COLORS.neonCyan}>{formatBytes(memory.used)}</Text>
-          <Text color={CYBER_COLORS.dim}> / {formatBytes(memory.total)}</Text>
-          <Text color={CYBER_COLORS.dim}> │ Free: </Text>
-          <Text color={CYBER_COLORS.neonGreen}>{formatBytes(memory.free)}</Text>
+          <Text color={CYBER_COLORS.neonCyan}>Active: </Text>
+          <Text color={CYBER_COLORS.neonCyan}>
+            {memory.active > 0 ? formatBytes(memory.active) : formatBytes(memory.used)}
+          </Text>
+          <Text color={CYBER_COLORS.dim}> │ </Text>
+          <Text color={CYBER_COLORS.neonGreen}>Avail: </Text>
+          <Text color={CYBER_COLORS.neonGreen}>{formatBytes(available)}</Text>
         </Box>
+
+        {/* Detailed breakdown if available */}
+        {memory.wired > 0 && (
+          <Box marginTop={1}>
+            <Text color={CYBER_COLORS.dim}>
+              Wired: {formatBytes(memory.wired)} │
+              Cached: {formatBytes(memory.inactive)} │
+              Comp: {formatBytes(memory.compressed)}
+            </Text>
+          </Box>
+        )}
       </Box>
     </Box>
   );

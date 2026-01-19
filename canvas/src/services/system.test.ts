@@ -39,11 +39,12 @@ async function testSystemService() {
 
     // Test 3: Memory
     console.log("\n\nTest 3: Memory");
-    const mem = systemService.getMemoryInfo();
+    const mem = await systemService.getMemoryInfo();
     console.log(`  Total: ${formatBytes(mem.total)}`);
     console.log(`  Used: ${formatBytes(mem.used)} (${mem.usedPercent}%)`);
+    console.log(`  Pressure: ${mem.pressure}% (${mem.pressureLevel})`);
     console.log(`  Free: ${formatBytes(mem.free)}`);
-    console.log(`  ${progressBar(mem.usedPercent, 30)}`);
+    console.log(`  ${progressBar(mem.pressure, 30)}`);
 
     // Test 4: Disk
     console.log("\n\nTest 4: Disk Info");
