@@ -39,7 +39,13 @@ export interface MemoryInfo {
   total: number; // bytes
   free: number; // bytes
   used: number; // bytes
-  usedPercent: number; // %
+  usedPercent: number; // % (raw, includes cached)
+  pressure: number; // % (actual pressure - macOS only)
+  pressureLevel: "normal" | "warn" | "critical"; // pressure status
+  active: number; // bytes (actively used)
+  inactive: number; // bytes (cached, reclaimable)
+  wired: number; // bytes (kernel, not reclaimable)
+  compressed: number; // bytes (in compressor)
   swapTotal: number; // bytes
   swapFree: number; // bytes
   swapUsed: number; // bytes
@@ -186,19 +192,70 @@ export class SystemService {
   }
 
   /**
-   * Get memory info
+   * Get memory info with macOS memory pressure
    */
-  getMemoryInfo(): MemoryInfo {
+  async getMemoryInfo(): Promise<MemoryInfo> {
     const total = os.totalmem();
     const free = os.freemem();
     const used = total - free;
+    const pageSize = 16384; // macOS page size
+
+    // Default values
+    let pressure = Math.round((used / total) * 100);
+    let pressureLevel: "normal" | "warn" | "critical" = "normal";
+    let active = 0;
+    let inactive = 0;
+    let wired = 0;
+    let compressed = 0;
+
+    // On macOS, get actual memory pressure
+    if (os.platform() === "darwin") {
+      try {
+        // Get memory pressure percentage
+        const pressureResult = await $`memory_pressure 2>/dev/null`.text();
+        const freeMatch = pressureResult.match(
+          /System-wide memory free percentage:\s*(\d+)%/
+        );
+        if (freeMatch && freeMatch[1]) {
+          const freePercent = parseInt(freeMatch[1], 10);
+          pressure = 100 - freePercent;
+        }
+
+        // Get detailed vm_stat info
+        const vmResult = await $`vm_stat`.text();
+        const getPages = (pattern: RegExp): number => {
+          const match = vmResult.match(pattern);
+          return match && match[1] ? parseInt(match[1].replace(/\./g, ""), 10) : 0;
+        };
+
+        active = getPages(/Pages active:\s*(\d+)/) * pageSize;
+        inactive = getPages(/Pages inactive:\s*(\d+)/) * pageSize;
+        wired = getPages(/Pages wired down:\s*(\d+)/) * pageSize;
+        compressed = getPages(/Pages occupied by compressor:\s*(\d+)/) * pageSize;
+
+        // Determine pressure level
+        if (pressure > 80) {
+          pressureLevel = "critical";
+        } else if (pressure > 50) {
+          pressureLevel = "warn";
+        }
+      } catch {
+        // Fall back to basic calculation
+        pressure = Math.round((used / total) * 100);
+      }
+    }
 
     return {
       total,
       free,
       used,
       usedPercent: Math.round((used / total) * 1000) / 10,
-      // Swap info requires platform-specific calls
+      pressure,
+      pressureLevel,
+      active,
+      inactive,
+      wired,
+      compressed,
       swapTotal: 0,
       swapFree: 0,
       swapUsed: 0,
@@ -326,16 +383,17 @@ export class SystemService {
    * Get full system snapshot
    */
   async getSnapshot(): Promise<SystemSnapshot> {
-    const [disks, processes] = await Promise.all([
+    const [disks, processes, memory] = await Promise.all([
       this.getDiskInfo(),
       this.getProcesses(15),
+      this.getMemoryInfo(),
     ]);
 
     return {
       timestamp: new Date(),
       overview: this.getOverview(),
       cpu: this.getCpuUsage(),
-      memory: this.getMemoryInfo(),
+      memory,
       disks,
       processes,
       network: this.getNetworkInfo(),

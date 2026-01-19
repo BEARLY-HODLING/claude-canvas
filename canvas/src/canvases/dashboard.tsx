@@ -561,7 +561,7 @@ export function DashboardCanvas({
     setSystemLoading(true);
     try {
       const cpuData = systemService.getCpuUsage();
-      const memData = systemService.getMemoryInfo();
+      const memData = await systemService.getMemoryInfo();
       setCpu(cpuData);
       setMemory(memData);
     } catch (err) {
